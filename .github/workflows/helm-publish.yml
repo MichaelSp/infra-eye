@@ -1,0 +1,179 @@
+name: Build and Publish Helm Chart
+
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "v*.*.*"
+    paths:
+      - "chart/**"
+      - ".github/workflows/helm-publish.yml"
+  pull_request:
+    branches:
+      - main
+    paths:
+      - "chart/**"
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  CHART_PATH: chart/infra-eye
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "latest"
+
+      - name: Lint Helm chart
+        run: |
+          helm lint ${{ env.CHART_PATH }}
+
+      - name: Helm template dry-run
+        run: |
+          helm template test-release ${{ env.CHART_PATH }}
+
+  package-and-publish:
+    runs-on: ubuntu-latest
+    needs: lint-and-test
+    if: github.event_name != 'pull_request'
+    permissions:
+      contents: write
+      packages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "latest"
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Determine chart version
+        id: chart-version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            # Use git tag version (strip 'v' prefix)
+            VERSION="${{ github.ref_name }}"
+            VERSION="${VERSION#v}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using tag version: $VERSION"
+          else
+            # Use version from Chart.yaml with commit SHA suffix
+            CHART_VERSION=$(grep '^version:' ${{ env.CHART_PATH }}/Chart.yaml | awk '{print $2}')
+            SHORT_SHA=$(git rev-parse --short HEAD)
+            VERSION="${CHART_VERSION}-${SHORT_SHA}"
+            echo "version=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using Chart.yaml version with SHA: $VERSION"
+          fi
+
+      - name: Update Chart.yaml version
+        run: |
+          VERSION="${{ steps.chart-version.outputs.version }}"
+          sed -i "s/^version:.*/version: $VERSION/" ${{ env.CHART_PATH }}/Chart.yaml
+
+          # Also update appVersion if this is a tagged release
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            sed -i "s/^appVersion:.*/appVersion: \"$VERSION\"/" ${{ env.CHART_PATH }}/Chart.yaml
+          fi
+
+          echo "Updated Chart.yaml:"
+          cat ${{ env.CHART_PATH }}/Chart.yaml
+
+      - name: Package Helm chart
+        run: |
+          helm package ${{ env.CHART_PATH }} --destination .helm-charts
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Helm chart to OCI registry
+        run: |
+          CHART_VERSION="${{ steps.chart-version.outputs.version }}"
+          CHART_FILE=".helm-charts/infra-eye-${CHART_VERSION}.tgz"
+
+          if [ -f "$CHART_FILE" ]; then
+            helm push "$CHART_FILE" oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
+            echo "Successfully pushed chart version $CHART_VERSION"
+          else
+            echo "Error: Chart file not found: $CHART_FILE"
+            ls -la .helm-charts/
+            exit 1
+          fi
+
+      - name: Create GitHub Release (on tag)
+        if: startsWith(github.ref, 'refs/tags/v')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: .helm-charts/*.tgz
+          generate_release_notes: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  publish-pages:
+    runs-on: ubuntu-latest
+    needs: package-and-publish
+    if: github.ref == 'refs/heads/main'
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: "latest"
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Checkout gh-pages branch
+        run: |
+          git fetch origin gh-pages || git checkout --orphan gh-pages
+          git checkout gh-pages || git checkout --orphan gh-pages
+          git reset --hard
+
+      - name: Package Helm chart
+        run: |
+          git checkout main -- ${{ env.CHART_PATH }}
+          helm package ${{ env.CHART_PATH }} --destination .
+
+      - name: Create or update Helm repository index
+        run: |
+          helm repo index . --url https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}
+
+      - name: Commit and push to gh-pages
+        run: |
+          git add *.tgz index.yaml
+          git commit -m "Update Helm repository [skip ci]" || echo "No changes to commit"
+          git push origin gh-pages

@@ -1,0 +1,5 @@
+suite: test deployment
+tests:
+  - it: should create a deployment with default values
+    asserts:
+      - matchSnapshot: {}

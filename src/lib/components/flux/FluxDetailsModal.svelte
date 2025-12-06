@@ -1,33 +1,33 @@
 <script lang="ts">
-	import { Badge, Button, Modal } from "flowbite-svelte";
-	import {
-		ChevronDownOutline,
-		ChevronUpOutline,
-		ClockOutline,
-		CodeOutline,
-		ExclamationCircleOutline,
-	} from "flowbite-svelte-icons";
-	import type { K8sResource } from "$lib/stores/k8s-resources";
-	import { getSourceInfo, formatTime } from "./utils";
+import { Badge, Button, Modal } from "flowbite-svelte"
+import {
+  ChevronDownOutline,
+  ChevronUpOutline,
+  ClockOutline,
+  CodeOutline,
+  ExclamationCircleOutline
+} from "flowbite-svelte-icons"
+import type { K8sResource } from "$lib/stores/k8s-resources"
+import { getSourceInfo, formatTime } from "./utils"
 
-	export let resource: K8sResource;
-	export let open: boolean;
+export let resource: K8sResource
+export let open: boolean
 
-	let showConditions = false;
+let showConditions = false
 
-	const sourceInfo = getSourceInfo(resource);
-	const readyCondition = resource.status?.conditions?.find(
-		(c: any) => c.type === "Ready",
-	);
-	const isReady = readyCondition?.status === "True";
-	const statusText = readyCondition?.message || "Unknown";
-	const conditions = resource.status?.conditions || [];
+const sourceInfo = getSourceInfo(resource)
+const readyCondition = resource.status?.conditions?.find(
+  (c: any) => c.type === "Ready"
+)
+const isReady = readyCondition?.status === "True"
+const statusText = readyCondition?.message || "Unknown"
+const conditions = resource.status?.conditions || []
 
-	const lastReconcile = formatTime(
-		resource.status?.lastHandledReconcileAt ||
-			resource.status?.lastAppliedRevision ||
-			resource.status?.artifact?.lastUpdateTime,
-	);
+const lastReconcile = formatTime(
+  resource.status?.lastHandledReconcileAt ||
+    resource.status?.lastAppliedRevision ||
+    resource.status?.artifact?.lastUpdateTime
+)
 </script>
 
 <Modal bind:open size="lg" class="bg-slate-900">

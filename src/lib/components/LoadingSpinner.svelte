@@ -1,5 +1,5 @@
 <script lang="ts">
-	export let message = "Loading...";
+export let message = "Loading..."
 </script>
 
 <div class="flex items-center justify-center py-20">

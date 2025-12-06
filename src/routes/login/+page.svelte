@@ -1,10 +1,10 @@
 <script lang="ts">
-	import { signIn } from "@auth/sveltekit/client";
-	import { Button, Card } from "flowbite-svelte";
+import { signIn } from "@auth/sveltekit/client"
+import { Button, Card } from "flowbite-svelte"
 
-	async function handleLogin() {
-		await signIn("oidc", { redirectTo: "/" });
-	}
+async function handleLogin() {
+  await signIn("oidc", { redirectTo: "/" })
+}
 </script>
 
 <svelte:head>

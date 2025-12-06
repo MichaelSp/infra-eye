@@ -1,10 +1,10 @@
 <script lang="ts">
-	import type { Writable } from "svelte/store";
+import type { Writable } from "svelte/store"
 
-	export let kinds: string[];
-	export let kindFilter: Writable<string>;
-	export let resourceCounts: Map<string, number>;
-	export let totalCount: number;
+export let kinds: string[]
+export let kindFilter: Writable<string>
+export let resourceCounts: Map<string, number>
+export let totalCount: number
 </script>
 
 <div class="flex items-center gap-2 flex-wrap">

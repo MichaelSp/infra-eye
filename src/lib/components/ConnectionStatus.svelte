@@ -1,13 +1,13 @@
 <script lang="ts">
-	import { Alert, Badge, Spinner } from "flowbite-svelte";
-	import {
-		CheckCircleSolid,
-		ExclamationCircleSolid,
-		InfoCircleSolid,
-	} from "flowbite-svelte-icons";
+import { Alert, Badge, Spinner } from "flowbite-svelte"
+import {
+  CheckCircleSolid,
+  ExclamationCircleSolid,
+  InfoCircleSolid
+} from "flowbite-svelte-icons"
 
-	export let status: "connecting" | "connected" | "error" | "disconnected";
-	export let errors: (string | null)[] = [];
+export let status: "connecting" | "connected" | "error" | "disconnected"
+export let errors: (string | null)[] = []
 </script>
 
 <div>
