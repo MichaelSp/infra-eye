@@ -115,7 +115,7 @@ jobs:
           CHART_FILE=".helm-charts/infra-eye-${CHART_VERSION}.tgz"
 
           if [ -f "$CHART_FILE" ]; then
-            helm push "$CHART_FILE" oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/charts
+            helm push "$CHART_FILE" oci://${{ env.REGISTRY }}/${{ github.repository_owner }}/infra-eye
             echo "Successfully pushed chart version $CHART_VERSION"
           else
             echo "Error: Chart file not found: $CHART_FILE"
