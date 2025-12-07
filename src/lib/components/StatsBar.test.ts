@@ -49,7 +49,8 @@ describe('StatsBar', () => {
 		render(StatsBar, { props: { totalCount: 12, resourceCounts } });
 		
 		expect(screen.getByText('Total:')).toBeInTheDocument();
-		expect(screen.getByText('12')).toBeInTheDocument();
+		const twelves = screen.getAllByText('12');
+		expect(twelves.length).toBe(2); // Total and HelmRelease both show 12
 		expect(screen.getByText('HelmRelease:')).toBeInTheDocument();
 	});
 

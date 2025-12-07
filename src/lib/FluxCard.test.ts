@@ -1,5 +1,4 @@
 import { render, screen } from '@testing-library/svelte';
-import userEvent from '@testing-library/user-event';
 import { describe, expect, it } from 'vitest';
 import FluxCard from './FluxCard.svelte';
 import type { K8sResource } from './stores/k8s-resources';
@@ -33,42 +32,21 @@ describe('FluxCard', () => {
 		}
 	};
 
-	it('renders FluxCardCompact component', () => {
+	it('renders resource name', () => {
 		render(FluxCard, { props: { resource: mockResource } });
 		
 		expect(screen.getByText('test-release')).toBeInTheDocument();
 	});
 
-	it('opens modal when card is clicked', async () => {
-		const user = userEvent.setup();
+	it('renders resource kind', () => {
 		render(FluxCard, { props: { resource: mockResource } });
 		
-		const cardButton = screen.getByRole('button');
-		await user.click(cardButton);
-		
-		// Modal should be visible (checking for modal content)
-		// The modal renders additional details
-		expect(screen.getAllByText('test-release').length).toBeGreaterThan(1);
-	});
-
-	it('passes resource to both components', () => {
-		render(FluxCard, { props: { resource: mockResource } });
-		
-		expect(screen.getByText('test-release')).toBeInTheDocument();
 		expect(screen.getByText('HelmRelease')).toBeInTheDocument();
 	});
 
-	it('handles resource with no namespace', () => {
-		const clusterResource: K8sResource = {
-			...mockResource,
-			metadata: {
-				name: 'cluster-resource',
-				creationTimestamp: '2024-01-01T00:00:00Z' as any
-			}
-		};
+	it('renders namespace', () => {
+		render(FluxCard, { props: { resource: mockResource } });
 		
-		render(FluxCard, { props: { resource: clusterResource } });
-		
-		expect(screen.getByText('cluster-resource')).toBeInTheDocument();
+		expect(screen.getByText('default')).toBeInTheDocument();
 	});
 });

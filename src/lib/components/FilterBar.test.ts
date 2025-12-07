@@ -96,7 +96,8 @@ describe("FilterBar", () => {
       },
     });
 
-    expect(screen.getByText("0")).toBeInTheDocument();
+    const zeros = screen.getAllByText("0");
+    expect(zeros.length).toBe(2);
   });
 
   it('does not render "all" in the kinds list', () => {

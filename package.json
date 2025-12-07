@@ -16,7 +16,7 @@
     "biome:check": "biome check .",
     "biome:fix": "biome check --write .",
     "test": "vitest",
-    "test:ui": "vitest --ui",
+    "test:ai": "vitest --run --reporter=json",
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage"
   },
@@ -31,6 +31,7 @@
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/svelte": "^5.2.9",
     "@testing-library/user-event": "^14.6.1",
+    "@vitest/coverage-v8": "^4.0.15",
     "@vitest/ui": "^4.0.15",
     "autoprefixer": "^10.4.22",
     "flowbite": "^4.0.1",
