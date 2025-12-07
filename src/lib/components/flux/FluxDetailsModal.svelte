@@ -1,4 +1,5 @@
 <script lang="ts">
+import type { K8sResource } from "$lib/stores/k8s-resources"
 import { Badge, Button, Modal } from "flowbite-svelte"
 import {
   ChevronDownOutline,
@@ -7,8 +8,7 @@ import {
   CodeOutline,
   ExclamationCircleOutline
 } from "flowbite-svelte-icons"
-import type { K8sResource } from "$lib/stores/k8s-resources"
-import { getSourceInfo, formatTime } from "./utils"
+import { formatTime, getSourceInfo } from "./utils"
 
 export let resource: K8sResource
 export let open: boolean
