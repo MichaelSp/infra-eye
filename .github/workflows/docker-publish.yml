@@ -6,7 +6,11 @@ on:
       - main
     tags:
       - "v*.*.*"
+    paths-ignore:
+      - "chart/**"
   pull_request:
+    paths-ignore:
+      - "chart/**"
     branches:
       - main
   workflow_dispatch:

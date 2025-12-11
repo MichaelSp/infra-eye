@@ -10,7 +10,7 @@ Create a `.env` file in the `infra-eye` directory with the following variables:
 # OIDC Configuration
 OAUTH_CLIENT_ID=your-client-id
 OAUTH_CLIENT_SECRET=your-client-secret
-OAUTH_DISCOVERY_URL=https://your-oidc-provider.com/.well-known/openid-configuration
+OAUTH_ISSUER_URL=https://your-oidc-provider.com
 
 # Auth Secret (generate with: openssl rand -base64 32)
 AUTH_SECRET=your-random-secret-here
@@ -70,7 +70,7 @@ For production:
    ```bash
    OAUTH_CLIENT_ID=production-client-id
    OAUTH_CLIENT_SECRET=production-secret
-   OAUTH_DISCOVERY_URL=https://auth.yourdomain.com/.well-known/openid-configuration
+   OAUTH_ISSUER_URL=https://auth.yourdomain.com/.well-known/openid-configuration
    AUTH_SECRET=production-random-secret
    ```
 
@@ -81,8 +81,8 @@ For production:
 ## Troubleshooting
 
 ### Login redirects in a loop
-- Check that `OAUTH_DISCOVERY_URL` is accessible
-- Verify the Client ID and Secret are correct
+- Check that `OAUTH_ISSUER_URL` is accessible
+- Verify client credentials are correct
 - Ensure the redirect URI is registered in your OIDC provider
 
 ### "Invalid credentials" error

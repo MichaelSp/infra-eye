@@ -3,14 +3,14 @@ import { SvelteKitAuth } from "@auth/sveltekit"
 import type { Handle } from "@sveltejs/kit"
 
 // Check if OIDC is configured
-const isOidcConfigured = Boolean(import.meta.env.OAUTH_DISCOVERY_URL)
+const isOidcConfigured = Boolean(import.meta.env.OAUTH_ISSUER_URL)
 
 // Custom OIDC provider configuration using environment variables
 const oidcProvider: Provider = {
   id: "oidc",
   name: "OIDC",
   type: "oidc",
-  wellKnown: import.meta.env.OAUTH_DISCOVERY_URL,
+  issuer: import.meta.env.OAUTH_ISSUER_URL,
   clientId: import.meta.env.OAUTH_CLIENT_ID,
   clientSecret: import.meta.env.OAUTH_CLIENT_SECRET,
   authorization: { params: { scope: "openid profile email" } },
@@ -62,5 +62,5 @@ if (isOidcConfigured) {
   console.log("[Auth] OIDC authentication enabled")
 } else {
   console.log("[Auth] OIDC not configured - using static development session")
-  console.log("[Auth] Set OAUTH_DISCOVERY_URL to enable OIDC authentication")
+  console.log("[Auth] Set OAUTH_ISSUER_URL to enable OIDC authentication")
 }
