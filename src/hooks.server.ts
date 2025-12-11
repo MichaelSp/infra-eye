@@ -3,16 +3,16 @@ import { SvelteKitAuth } from "@auth/sveltekit"
 import type { Handle } from "@sveltejs/kit"
 
 // Check if OIDC is configured
-const isOidcConfigured = Boolean(import.meta.env.OAUTH_ISSUER_URL)
+const isOidcConfigured = Boolean(process.env.OAUTH_ISSUER_URL)
 
 // Custom OIDC provider configuration using environment variables
 const oidcProvider: Provider = {
   id: "oidc",
   name: "OIDC",
   type: "oidc",
-  issuer: import.meta.env.OAUTH_ISSUER_URL,
-  clientId: import.meta.env.OAUTH_CLIENT_ID,
-  clientSecret: import.meta.env.OAUTH_CLIENT_SECRET,
+  issuer: process.env.OAUTH_ISSUER_URL,
+  clientId: process.env.OAUTH_CLIENT_ID,
+  clientSecret: process.env.OAUTH_CLIENT_SECRET,
   authorization: { params: { scope: "openid profile email" } },
   profile(profile) {
     return {
