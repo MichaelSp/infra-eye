@@ -1,5 +1,8 @@
 suite: test deployment
+chart:
+  version: 0.0.1
+  appVersion: 1.0.0
 tests:
-  - it: should create a deployment with default values
-    asserts:
-      - matchSnapshot: {}
+- it: should create a deployment with default values
+  asserts:
+  - matchSnapshot: {}
