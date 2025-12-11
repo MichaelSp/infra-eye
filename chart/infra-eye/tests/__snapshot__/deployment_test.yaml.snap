@@ -33,7 +33,7 @@ should create a deployment with default values:
             helm.sh/chart: infra-eye-0.0.1
         spec:
           containers:
-            - environment:
+            - env:
                 - name: OAUTH_CLIENT_ID
                   valueFrom:
                     secretKeyRef:

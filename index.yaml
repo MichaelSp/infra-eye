@@ -3,7 +3,17 @@ entries:
   infra-eye:
   - apiVersion: v2
     appVersion: 0.3.0
-    created: "2025-12-11T21:08:33.736557987Z"
+    created: "2025-12-11T21:22:08.410835956Z"
+    description: A Helm chart for Kubernetes
+    digest: 356795806a1907f54555f5fc29fe744a9c231ef2b25a66cddfe98b182beef40c
+    name: infra-eye
+    type: application
+    urls:
+    - https://MichaelSp.github.io/infra-eye/infra-eye-0.3.1.tgz
+    version: 0.3.1
+  - apiVersion: v2
+    appVersion: 0.3.0
+    created: "2025-12-11T21:22:08.410352207Z"
     description: A Helm chart for Kubernetes
     digest: 0c1881d2168505293e0d3e5a045d61b7e04bcb72404df5a266d24f2a5394ba07
     name: infra-eye
@@ -13,7 +23,7 @@ entries:
     version: 0.3.0
   - apiVersion: v2
     appVersion: 1.16.0
-    created: "2025-12-11T21:08:33.735234654Z"
+    created: "2025-12-11T21:22:08.409829335Z"
     description: A Helm chart for Kubernetes
     digest: f2828cb9e7725fcc866c6e24c8c3145c40729d172fdeabb3b998c34348b0de74
     name: infra-eye
@@ -21,4 +31,4 @@ entries:
     urls:
     - https://MichaelSp.github.io/infra-eye/infra-eye-0.1.0.tgz
     version: 0.1.0
-generated: "2025-12-11T21:08:33.734638339Z"
+generated: "2025-12-11T21:22:08.4091864Z"
