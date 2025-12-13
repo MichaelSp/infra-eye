@@ -1,0 +1,49 @@
+{{- if .Values.rbac.create -}}
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: {{ include "infra-eye.fullname" . }}
+  labels:
+    {{- include "infra-eye.labels" . | nindent 4 }}
+rules:
+  # Required for API discovery - the informer needs to discover available API groups and resources
+  - apiGroups: [""]
+    resources: ["crds"]
+    verbs: ["get", "list", "watch"]
+  
+  # Flux CD resources (source.toolkit.fluxcd.io, kustomize.toolkit.fluxcd.io, helm.toolkit.fluxcd.io)
+  - apiGroups: ["source.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  
+  - apiGroups: ["kustomize.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  
+  - apiGroups: ["helm.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  
+  - apiGroups: ["notification.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+  
+  - apiGroups: ["image.toolkit.fluxcd.io"]
+    resources: ["*"]
+    verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: {{ include "infra-eye.fullname" . }}
+  labels:
+    {{- include "infra-eye.labels" . | nindent 4 }}
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: {{ include "infra-eye.fullname" . }}
+subjects:
+  - kind: ServiceAccount
+    name: {{ include "infra-eye.serviceAccountName" . }}
+    namespace: {{ .Release.Namespace }}
+{{- end }}
