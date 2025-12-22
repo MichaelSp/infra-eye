@@ -203,15 +203,13 @@ class K8sInformerManager {
   private async getWatchPath(
     kind: string,
     namespace?: string
-  ): Promise<string> {
+  ): Promise<string | null> {
     await this.discoverApiResources()
 
     const resource = this.apiResourceCache.get(kind.toLowerCase())
     if (!resource) {
-      const sample = Array.from(this.apiResourceCache.keys()).slice(0, 5)
-      throw new Error(
-        `Unknown resource: ${kind}. Sample keys: ${sample.join(", ")}`
-      )
+      // Return null instead of throwing to allow graceful handling
+      return null
     }
 
     return this.buildWatchPath(resource, namespace)
@@ -303,6 +301,33 @@ class K8sInformerManager {
 
     try {
       const path = await this.getWatchPath(kind, namespace)
+
+      // Handle unknown resource type gracefully
+      if (!path) {
+        console.warn(
+          `[K8s] Resource type '${kind}' not available in cluster - skipping watcher`
+        )
+        
+        // Notify subscribers that this resource type is not available
+        const watcher = this.watchers.get(watchKey)
+        if (watcher) {
+          const errorEvent: ResourceEvent = {
+            type: "ERROR",
+            error: `Resource type '${kind}' not available in this cluster`
+          }
+          watcher.callbacks.forEach((callback) => {
+            try {
+              callback(errorEvent)
+            } catch (cbErr) {
+              console.error(`[K8s] Error in callback for ${watchKey}:`, cbErr)
+            }
+          })
+        }
+        
+        // Remove the watcher since it cannot be started
+        this.watchers.delete(watchKey)
+        return
+      }
 
       console.log(`[K8s] Starting watcher for ${watchKey}`)
 
