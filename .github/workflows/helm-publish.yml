@@ -16,6 +16,8 @@ on:
       - "chart/**"
   workflow_dispatch:
 
+permissions: {}
+
 env:
   REGISTRY: ghcr.io
   CHART_PATH: chart/infra-eye
