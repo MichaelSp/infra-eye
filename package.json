@@ -23,7 +23,6 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.3.8",
-    "@sveltejs/adapter-node": "^5.4.0",
     "@sveltejs/kit": "^2.49.1",
     "@sveltejs/vite-plugin-svelte": "^6.2.1",
     "@tailwindcss/postcss": "^4.1.17",
@@ -51,6 +50,7 @@
   "dependencies": {
     "@auth/core": "^0.41.1",
     "@auth/sveltekit": "^1.11.1",
-    "@kubernetes/client-node": "^1.4.0"
+    "@kubernetes/client-node": "^1.4.0",
+    "@sveltejs/adapter-node": "^5.4.0"
   }
 }
