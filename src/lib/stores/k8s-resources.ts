@@ -33,8 +33,6 @@ interface WatcherState {
   retryTimeout: number | null
 }
 
-const _watchers = new Map<string, WatcherState>()
-
 /**
  * Create a store for watching Kubernetes resources
  * @param kind - Resource kind, can be short name (e.g. "helmreleases") or full group-version-kind (e.g. "helmreleases.v2beta1.helm.toolkit.fluxcd.io")
@@ -44,12 +42,11 @@ export function createK8sResourceStore(
   kind: string,
   namespace?: string
 ): Readable<ResourceStore> {
-  const _watchKey = namespace ? `${kind}:${namespace}` : kind
   const url = namespace
     ? `/api/watch/${encodeURIComponent(kind)}?namespace=${namespace}`
     : `/api/watch/${encodeURIComponent(kind)}`
 
-  const { subscribe, set, update } = writable<ResourceStore>({
+  const { subscribe, _, update } = writable<ResourceStore>({
     resources: new Map(),
     status: "disconnected",
     error: null,
