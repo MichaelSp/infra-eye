@@ -7,8 +7,8 @@ metadata:
     {{- include "infra-eye.labels" . | nindent 4 }}
 rules:
   # Required for API discovery - the informer needs to discover available API groups and resources
-  - apiGroups: [""]
-    resources: ["crds"]
+  - apiGroups: ["apiextensions.k8s.io"]
+    resources: ["customresourcedefinitions"]
     verbs: ["get", "list", "watch"]
   
   # Flux CD resources (source.toolkit.fluxcd.io, kustomize.toolkit.fluxcd.io, helm.toolkit.fluxcd.io)
