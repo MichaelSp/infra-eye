@@ -6,6 +6,10 @@ metadata:
   labels:
     {{- include "infra-eye.labels" . | nindent 4 }}
 rules:
+  # API discovery - access to discovery endpoints
+  - nonResourceURLs: ["/apis", "/apis/*"]
+    verbs: ["get"]
+  
   # Required for API discovery - the informer needs to discover available API groups and resources
   - apiGroups: ["apiextensions.k8s.io"]
     resources: ["customresourcedefinitions"]
