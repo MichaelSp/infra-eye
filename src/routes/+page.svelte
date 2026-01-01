@@ -1,18 +1,18 @@
 <script lang="ts">
-import FluxCard from "$lib/FluxCard.svelte"
-import ConnectionStatus from "$lib/components/ConnectionStatus.svelte"
-import EmptyState from "$lib/components/EmptyState.svelte"
-import FilterBar from "$lib/components/FilterBar.svelte"
-import LoadingSpinner from "$lib/components/LoadingSpinner.svelte"
+import FluxCard from "$lib/FluxCard.svelte";
+import ConnectionStatus from "$lib/components/ConnectionStatus.svelte";
+import EmptyState from "$lib/components/EmptyState.svelte";
+import FilterBar from "$lib/components/FilterBar.svelte";
+import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+import type { ResourceStore } from "$lib/stores/k8s-resources";
 import {
   createK8sResourceStore,
   type K8sResource
-} from "$lib/stores/k8s-resources"
-import { derived, writable, type Readable } from "svelte/store"
-import type { ResourceStore } from "$lib/stores/k8s-resources"
-import { signOut } from "@auth/sveltekit/client"
-import { Button } from "flowbite-svelte"
-import { ArrowRightToBracketOutline } from "flowbite-svelte-icons"
+} from "$lib/stores/k8s-resources";
+import { signOut } from "@auth/sveltekit/client";
+import { Button } from "flowbite-svelte";
+import { ArrowRightToBracketOutline } from "flowbite-svelte-icons";
+import { derived, writable, type Readable } from "svelte/store";
 
 let { data } = $props()
 
@@ -85,12 +85,14 @@ function resourceKey(r: K8sResource) {
 	<meta name="description" content="Real-time GitOps dashboard for Flux resources" />
 </svelte:head>
 
-<header class="px-6 py-4 border-b border-slate-800">
+<header class="px-6 py-5 border-b border-slate-800/60 bg-slate-900/50 backdrop-blur-sm">
 	<div class="max-w-7xl mx-auto">
 		<div class="flex items-center justify-between">
 			<div>
-				<h1 class="text-xl font-semibold">Infra Eye — GitOps Dashboard</h1>
-				<p class="text-sm text-slate-400 mt-1">
+				<h1 class="text-2xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+					Infra Eye — GitOps Dashboard
+				</h1>
+				<p class="text-sm text-slate-400 mt-1.5">
 					Real-time Kubernetes Flux resources monitoring
 				</p>
 			</div>
@@ -116,7 +118,7 @@ function resourceKey(r: K8sResource) {
 		</div>
 
 		<!-- Filter Tabs -->
-		<div class="mt-4">
+		<div class="mt-5">
 			<FilterBar
 				kinds={$kinds}
 				{kindFilter}
@@ -133,7 +135,7 @@ function resourceKey(r: K8sResource) {
 	{:else if $filtered.length === 0}
 		<EmptyState kindFilter={$kindFilter} />
 	{:else}
-		<section class="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
+		<section class="grid grid-cols-3 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-4">
 			{#each $filtered as r (resourceKey(r))}
 				<FluxCard resource={r} />
 			{/each}
