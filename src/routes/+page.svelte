@@ -129,9 +129,6 @@ function clearFilters() {
 	<meta name="description" content="Real-time GitOps dashboard for Flux resources" />
 </svelte:head>
 
-<!-- AppHeader removed to match target.jpg layout -->
-<!-- <AppHeader connectionStatus={$connectionStatus} session={data.session} /> -->
-
 <main class="px-8 py-6 max-w-7xl mx-auto">
 	{#if $connectionStatus.status === "connecting"}
 		<LoadingSpinner message="Connecting to Kubernetes cluster..." />
