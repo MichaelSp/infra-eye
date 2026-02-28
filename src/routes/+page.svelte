@@ -1,20 +1,20 @@
 <script lang="ts">
-import DropdownFilters from "$lib/components/DropdownFilters.svelte"
-import EmptyState from "$lib/components/EmptyState.svelte"
-import LoadingSpinner from "$lib/components/LoadingSpinner.svelte"
-import ResourceTable from "$lib/components/ResourceTable.svelte"
-import SummaryCards from "$lib/components/SummaryCards.svelte"
-import type { ResourceStore } from "$lib/stores/k8s-resources"
+import DropdownFilters from "$lib/components/DropdownFilters.svelte";
+import EmptyState from "$lib/components/EmptyState.svelte";
+import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+import ResourceTable from "$lib/components/ResourceTable.svelte";
+import SummaryCards from "$lib/components/SummaryCards.svelte";
+import type { ResourceStore } from "$lib/stores/k8s-resources";
 import {
   createK8sResourceStore,
   type K8sResource
-} from "$lib/stores/k8s-resources"
+} from "$lib/stores/k8s-resources";
 import {
   filterState,
   clearFilters as clearFilterState
-} from "$lib/state/filters.svelte"
-import { Button, TabItem, Tabs } from "flowbite-svelte"
-import { derived, type Readable } from "svelte/store"
+} from "$lib/state/filters.svelte";
+import { Button, TabItem, Tabs } from "flowbite-svelte";
+import { derived, type Readable } from "svelte/store";
 
 let { data } = $props()
 
