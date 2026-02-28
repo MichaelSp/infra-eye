@@ -4,4 +4,4 @@ Dockerfile
 .github
 .svelte-kit
 chart
-build
+coverage

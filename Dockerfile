@@ -1,4 +1,4 @@
-FROM node:alpine AS stage
+FROM node:20-alpine3.20 AS stage
 
 WORKDIR /app
 
@@ -8,13 +8,13 @@ RUN npm ci && npm run prepare
 COPY . .
 RUN npm run build
 
-FROM node:alpine
+FROM node:20-alpine3.20
 WORKDIR /app
-COPY --from=stage /app/package*.json ./ 
+
+# Copy pre-installed node_modules from build stage instead of reinstalling
+COPY --from=stage /app/node_modules ./node_modules
+COPY --from=stage /app/package*.json ./
 COPY --from=stage /app/svelte.config.js ./
-RUN npm ci --omit=dev
-
-
 COPY --from=stage /app/build ./build
 
 EXPOSE 3000
