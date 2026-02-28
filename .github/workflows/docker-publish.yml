@@ -62,7 +62,7 @@ jobs:
     concurrency:
       group: ${{ github.workflow }}-${{ github.ref }}
     permissions:
-      contents: read
+      contents: write
       packages: write
       id-token: write
 
@@ -120,3 +120,39 @@ jobs:
           build-args: |
             BUILD_DATE=${{ github.event.head_commit.timestamp }}
             VCS_REF=${{ github.sha }}
+
+      - name: Create GitHub Release
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          VERSION=${{ steps.semver.outputs.next }}
+          RELEASE_TAG="docker-v${VERSION}"
+
+          # Create release notes
+          cat > release_notes.md << EOF
+          ## Docker Image Release
+
+          \`\`\`bash
+          docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}
+          \`\`\`
+
+          ### Available Images
+          - \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${VERSION}\`
+          - \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`
+
+          ### Supported Platforms
+          - linux/amd64
+          - linux/arm64
+
+          ### Build Information
+          - Commit SHA: \`${{ github.sha }}\`
+          - Committed by: @${{ github.actor }}
+          - Build Date: ${{ github.event.head_commit.timestamp }}
+          EOF
+
+          # Create release
+          gh release create "${RELEASE_TAG}" \
+            --title "Docker Image v${VERSION}" \
+            --notes-file release_notes.md \
+            --latest
