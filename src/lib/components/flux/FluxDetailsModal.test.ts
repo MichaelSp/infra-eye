@@ -16,7 +16,8 @@ describe("FluxDetailsModal", () => {
         { manager: "test", operation: "Update", time: "2024-01-01T00:00:00Z" }
       ] as any,
       annotations: {
-        "kubectl.kubernetes.io/last-applied-configuration": '{"apiVersion":"v1","kind":"test"}'
+        "kubectl.kubernetes.io/last-applied-configuration":
+          '{"apiVersion":"v1","kind":"test"}'
       }
     },
     spec: {
@@ -114,7 +115,9 @@ describe("FluxDetailsModal", () => {
     render(FluxDetailsModal, { props: { resource: mockResource, open: true } })
 
     // Check for YAML format (key: value)
-    expect(screen.getByText(/apiVersion: helm.toolkit.fluxcd.io\/v2beta1/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/apiVersion: helm.toolkit.fluxcd.io\/v2beta1/)
+    ).toBeInTheDocument()
     expect(screen.getByText(/kind: HelmRelease/)).toBeInTheDocument()
   })
 
@@ -142,7 +145,9 @@ describe("FluxDetailsModal", () => {
     expect(yamlButton).toBeInTheDocument()
 
     // YAML should be visible by default
-    expect(screen.getByText(/apiVersion: helm.toolkit.fluxcd.io\/v2beta1/)).toBeInTheDocument()
+    expect(
+      screen.getByText(/apiVersion: helm.toolkit.fluxcd.io\/v2beta1/)
+    ).toBeInTheDocument()
 
     // Click to hide
     if (yamlButton) {
@@ -150,7 +155,9 @@ describe("FluxDetailsModal", () => {
     }
 
     // YAML should be hidden (no longer in document)
-    expect(screen.queryByText(/apiVersion: helm.toolkit.fluxcd.io\/v2beta1/)).not.toBeInTheDocument()
+    expect(
+      screen.queryByText(/apiVersion: helm.toolkit.fluxcd.io\/v2beta1/)
+    ).not.toBeInTheDocument()
   })
 
   it("displays YAML in editor-like styling", () => {

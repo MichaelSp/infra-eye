@@ -22,7 +22,8 @@ export const POST: RequestHandler = async ({ request }) => {
     if (group === null || group === undefined) {
       return json(
         {
-          error: "Group parameter is required (can be empty string for core resources)",
+          error:
+            "Group parameter is required (can be empty string for core resources)",
           received: { group }
         },
         { status: 400 }
@@ -30,7 +31,7 @@ export const POST: RequestHandler = async ({ request }) => {
     }
 
     console.log(
-      `[Reconcile] Triggering ${force ? "force-" : ""}reconcile for ${kind}/${name} in ${namespace} (group: ${group || 'core'})`
+      `[Reconcile] Triggering ${force ? "force-" : ""}reconcile for ${kind}/${name} in ${namespace} (group: ${group || "core"})`
     )
 
     const kc = new KubeConfig()
@@ -45,17 +46,14 @@ export const POST: RequestHandler = async ({ request }) => {
     // Parse plural from kind
     const [resourceName] = kind.toLowerCase().match(/[a-z]+/) || []
     if (!resourceName) {
-      return json(
-        { error: `Invalid kind format: ${kind}` },
-        { status: 400 }
-      )
+      return json({ error: `Invalid kind format: ${kind}` }, { status: 400 })
     }
     const plural = `${resourceName}s`
 
     // Prepare the patch
     const timestamp = new Date().toISOString()
     const annotations: Record<string, string> = {
-      "reconcile.fluxcd.io/requestedAt": timestamp,
+      "reconcile.fluxcd.io/requestedAt": timestamp
     }
 
     // Add force reconcile annotation if requested

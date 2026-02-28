@@ -1,7 +1,7 @@
 <script lang="ts">
-import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte";
-import type { K8sResource } from "$lib/stores/k8s-resources";
-import { Badge } from "flowbite-svelte";
+import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte"
+import type { K8sResource } from "$lib/stores/k8s-resources"
+import { Badge } from "flowbite-svelte"
 
 interface Props {
   resources: K8sResource[]
@@ -55,7 +55,9 @@ function handleRowClick(resource: K8sResource) {
   showModal = true
 }
 
-function handleViewSource(event: CustomEvent<{ kind: string; namespace: string; name: string }>) {
+function handleViewSource(
+  event: CustomEvent<{ kind: string; namespace: string; name: string }>
+) {
   const { kind, namespace, name } = event.detail
 
   // Find the source resource from the resources prop
