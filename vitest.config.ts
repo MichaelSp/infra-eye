@@ -7,7 +7,8 @@ export default defineConfig({
   plugins: [tailwindcss(), svelte({ hot: !process.env.VITEST })],
   resolve: {
     alias: {
-      $lib: path.resolve("./src/lib")
+      $lib: path.resolve("./src/lib"),
+      "$app/environment": path.resolve("./src/tests/mocks/app-environment.ts")
     },
     // Ensure Vitest resolves browser entry points (e.g., svelte/index.js with mount)
     conditions: ["browser"]

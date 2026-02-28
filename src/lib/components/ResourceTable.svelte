@@ -50,6 +50,26 @@ function handleRowClick(resource: K8sResource) {
   selectedResource = resource
   showModal = true
 }
+
+function handleViewSource(event: CustomEvent<{ kind: string; namespace: string; name: string }>) {
+  const { kind, namespace, name } = event.detail
+
+  // Find the source resource from the resources prop
+  const sourceResource = resources.find(
+    (r) =>
+      r.kind === kind &&
+      r.metadata.namespace === namespace &&
+      r.metadata.name === name
+  )
+
+  if (sourceResource) {
+    // Open the modal with the source resource
+    selectedResource = sourceResource
+    showModal = true
+  } else {
+    console.warn(`Source resource not found: ${kind} ${namespace}/${name}`)
+  }
+}
 </script>
 
 <div class="bg-white border  rounded-lg overflow-hidden">
@@ -97,5 +117,10 @@ function handleRowClick(resource: K8sResource) {
 </div>
 
 {#if selectedResource}
-  <FluxDetailsModal resource={selectedResource} bind:open={showModal} />
+  <FluxDetailsModal
+    resource={selectedResource}
+    bind:open={showModal}
+    on:viewSource={handleViewSource}
+    allResources={resources}
+  />
 {/if}

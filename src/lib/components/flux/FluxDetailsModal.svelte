@@ -13,19 +13,26 @@ import {
   LinkOutline
 } from "flowbite-svelte-icons";
 import yaml from "js-yaml";
+import { createEventDispatcher } from "svelte";
 import { formatTime, getSourceInfo } from "./utils";
 
 export let resource: K8sResource
 export let open: boolean
+export let allResources: K8sResource[] = []
+
+const dispatch = createEventDispatcher<{
+  viewSource: {
+    kind: string
+    namespace: string
+    name: string
+  }
+}>()
 
 let showConditions = true
 let showManifest = true
 let isReconciling = false
 let reconcileError: string | null = null
 let reconcileSuccess = false
-let isLoadingSource = false
-let sourceResource: K8sResource | null = null
-let showSourceModal = false
 
 $: sourceInfo = getSourceInfo(resource)
 $: readyCondition = resource.status?.conditions?.find(
@@ -43,6 +50,118 @@ $: lastReconcile = formatTime(
 
 // Determine if this resource has a clickable source reference
 $: hasSourceReference = !!(sourceInfo.repo || sourceInfo.source)
+
+// Get the actual source resource to show its status
+$: sourceResource = hasSourceReference ? allResources.find(r => {
+  const sourceName = sourceInfo.repo || sourceInfo.source
+  const sourceKind = getSourceKind(resource)
+  const sourceNamespace = getSourceNamespace(resource)
+  return r.kind === sourceKind &&
+         r.metadata.name === sourceName &&
+         r.metadata.namespace === sourceNamespace
+}) : undefined
+
+$: sourceStatus = sourceResource ? getResourceStatus(sourceResource) : null
+
+// Determine if this resource is a source type (GitRepository, HelmRepository, etc.)
+$: isSourceType = ["GitRepository", "HelmRepository", "OCIRepository", "Bucket"].includes(resource.kind)
+
+// Find resources that use this source
+$: usages = isSourceType ? findResourcesUsingSource(resource, allResources) : []
+
+function findResourcesUsingSource(source: K8sResource, resources: K8sResource[]): K8sResource[] {
+  const sourceName = source.metadata.name
+  const sourceNamespace = source.metadata.namespace
+  const sourceKind = source.kind
+
+  return resources.filter(res => {
+    // Check HelmRelease references
+    if (res.kind === "HelmRelease") {
+      const ref = res.spec?.chart?.spec?.sourceRef
+      if (!ref) return false
+
+      const refNamespace = ref.namespace || res.metadata.namespace
+      return ref.kind === sourceKind &&
+             ref.name === sourceName &&
+             refNamespace === sourceNamespace
+    }
+
+    // Check Kustomization references
+    if (res.kind === "Kustomization") {
+      const ref = res.spec?.sourceRef
+      if (!ref) return false
+
+      const refNamespace = ref.namespace || res.metadata.namespace
+      return ref.kind === sourceKind &&
+             ref.name === sourceName &&
+             refNamespace === sourceNamespace
+    }
+
+    return false
+  })
+}
+
+function getSourceKind(res: K8sResource): string | null {
+  if (res.kind === "HelmRelease") {
+    return res.spec?.chart?.spec?.sourceRef?.kind || null
+  } else if (res.kind === "Kustomization") {
+    return res.spec?.sourceRef?.kind || null
+  }
+  return null
+}
+
+function getSourceNamespace(res: K8sResource): string {
+  // Check if sourceRef specifies a namespace
+  if (res.kind === "HelmRelease") {
+    const specifiedNs = res.spec?.chart?.spec?.sourceRef?.namespace
+    if (specifiedNs) return specifiedNs
+  } else if (res.kind === "Kustomization") {
+    const specifiedNs = res.spec?.sourceRef?.namespace
+    if (specifiedNs) return specifiedNs
+  }
+
+  // Default to resource's namespace, or flux-system if no namespace
+  return res.metadata.namespace || "flux-system"
+}
+
+function getResourceStatus(res: K8sResource): {
+  isReady: boolean
+  color: string
+  bgColor: string
+} {
+  const conditions = res.status?.conditions || []
+  const readyCondition = conditions.find((c: any) => c.type === "Ready")
+
+  if (res.spec?.suspend === true) {
+    return {
+      isReady: false,
+      color: "text-slate-500",
+      bgColor: "bg-slate-100 dark:bg-slate-800"
+    }
+  }
+
+  if (readyCondition?.status === "True") {
+    return {
+      isReady: true,
+      color: "text-green-600 dark:text-green-400",
+      bgColor: "bg-green-50 dark:bg-green-900/20"
+    }
+  }
+
+  if (readyCondition?.status === "False") {
+    return {
+      isReady: false,
+      color: "text-red-600 dark:text-red-400",
+      bgColor: "bg-red-50 dark:bg-red-900/20"
+    }
+  }
+
+  return {
+    isReady: false,
+    color: "text-amber-600 dark:text-amber-400",
+    bgColor: "bg-amber-50 dark:bg-amber-900/20"
+  }
+}
 
 // Parse apiVersion into group and version
 function parseApiVersion(apiVersion: string | undefined): {
@@ -146,52 +265,28 @@ async function triggerReconcile(force = false) {
   }
 }
 
-async function openSourceResource() {
-  if (!hasSourceReference) return
+function handleViewSource() {
+  const sourceName = sourceInfo.repo || sourceInfo.source
+  if (!sourceName) return
 
-  isLoadingSource = true
-  try {
-    // Get the source reference name
-    const sourceName = sourceInfo.repo || sourceInfo.source
-    if (!sourceName) return
+  const sourceKind = getSourceKind(resource)
+  if (!sourceKind) return
 
-    // Determine the source kind based on the current resource
-    let sourceKind = ""
-    if (resource.kind === "HelmRelease") {
-      // For HelmRelease, check sourceRef.kind or default to HelmRepository
-      sourceKind = resource.spec?.chart?.spec?.sourceRef?.kind || "HelmRepository"
-    } else if (resource.kind === "Kustomization") {
-      // For Kustomization, check sourceRef.kind
-      sourceKind = resource.spec?.sourceRef?.kind || "GitRepository"
-    }
+  const sourceNamespace = getSourceNamespace(resource)
 
-    if (!sourceKind) {
-      console.error("Could not determine source kind")
-      return
-    }
+  dispatch("viewSource", {
+    kind: sourceKind,
+    namespace: sourceNamespace,
+    name: sourceName
+  })
+}
 
-    // Fetch the source resource from the API
-    const namespace = resource.metadata.namespace || "flux-system"
-    const response = await fetch(
-      `/api/resource/${sourceKind}/${namespace}/${sourceName}`
-    )
-
-    if (!response.ok) {
-      throw new Error(`Failed to fetch ${sourceKind} resource`)
-    }
-
-    const data = await response.json()
-    sourceResource = data
-    showSourceModal = true
-  } catch (error: any) {
-    console.error("[Source] Error fetching source resource:", error)
-    reconcileError = error.message
-    setTimeout(() => {
-      reconcileError = null
-    }, 5000)
-  } finally {
-    isLoadingSource = false
-  }
+function handleViewUsage(usage: K8sResource) {
+  dispatch("viewSource", {
+    kind: usage.kind,
+    namespace: usage.metadata.namespace || "default",
+    name: usage.metadata.name
+  })
 }
 </script>
 
@@ -280,14 +375,39 @@ async function openSourceResource() {
 				</div>
 			</div>
 
-			<!-- Source Information -->
+		<!-- Source Information -->
+		{#if hasSourceReference}
 			<div class="border-t  pt-4">
-				<h4 class="text-sm font-semibold mb-3">Source Information</h4>
+				<div class="flex items-center justify-between mb-3">
+					<h4 class="text-sm font-semibold">Source Information</h4>
+					<Button
+						size="xs"
+						color="light"
+						onclick={handleViewSource}
+						class="flex items-center gap-1 {sourceStatus?.bgColor || ''}"
+					>
+						<LinkOutline size="xs" class={sourceStatus?.color || ""} />
+						<span class={sourceStatus?.color || ""}>View Source</span>
+					</Button>
+				</div>
 				<div class="space-y-2 text-sm">
 					<div class="flex items-start">
 						<span class=" w-24 shrink-0">{sourceInfo.type}:</span>
 						<span class=" break-all">{sourceInfo.value}</span>
 					</div>
+					{#if sourceInfo.repo || sourceInfo.source}
+						<div class="flex items-start">
+							<span class=" w-24 shrink-0">Source Ref:</span>
+							<span class="font-medium flex items-center gap-2">
+								{sourceInfo.repo || sourceInfo.source}
+								{#if sourceStatus}
+									<span class="text-xs {sourceStatus.color}">
+										{sourceStatus.isReady ? "✓" : "✗"}
+									</span>
+								{/if}
+							</span>
+						</div>
+					{/if}
 					{#if sourceInfo.version}
 						<div class="flex items-start">
 							<span class=" w-24 shrink-0">Version:</span>
@@ -308,6 +428,36 @@ async function openSourceResource() {
 					{/if}
 				</div>
 			</div>
+		{/if}
+
+		<!-- Usages -->
+		{#if isSourceType && usages.length > 0}
+			<div class="border-t  pt-4">
+				<h4 class="text-sm font-semibold mb-3">Used By ({usages.length})</h4>
+				<div class="space-y-2">
+					{#each usages as usage}
+						{@const status = getResourceStatus(usage)}
+						<button
+							onclick={() => handleViewUsage(usage)}
+							class="w-full flex items-center justify-between p-3 text-left rounded transition-colors border {status.bgColor}"
+						>
+							<div class="flex-1">
+								<div class="font-medium text-sm  flex items-center gap-2">
+									<span class={status.color}>
+										{status.isReady ? "✓" : "✗"}
+									</span>
+									{usage.metadata.name}
+								</div>
+								<div class="text-xs text-gray-500">
+									{usage.kind} • {usage.metadata.namespace}
+								</div>
+							</div>
+							<LinkOutline size="sm" class="text-gray-400" />
+						</button>
+					{/each}
+				</div>
+			</div>
+		{/if}
 
 			<!-- Status Message -->
 			{#if !isReady && statusText !== "Unknown"}
