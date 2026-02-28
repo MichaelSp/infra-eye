@@ -87,4 +87,12 @@ describe("FluxDetailsModal", () => {
     expect(screen.getByText("Namespace:")).toBeInTheDocument()
     expect(screen.getByText("default")).toBeInTheDocument()
   })
+
+  it("renders reconcile action buttons", () => {
+    render(FluxDetailsModal, { props: { resource: mockResource, open: true } })
+
+    expect(screen.getByText("Reconcile")).toBeInTheDocument()
+    expect(screen.getByText("Force Reconcile")).toBeInTheDocument()
+    expect(screen.getByText("Actions")).toBeInTheDocument()
+  })
 })
