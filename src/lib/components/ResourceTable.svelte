@@ -12,6 +12,27 @@ let { resources }: Props = $props()
 let selectedResource = $state<K8sResource | null>(null)
 let showModal = $state(false)
 
+// Keep selectedResource in sync with updated resources when modal is open
+$effect(() => {
+  if (showModal && selectedResource) {
+    // Find the updated version of the selected resource
+    const updated = resources.find(
+      (r) =>
+        r.kind === selectedResource.kind &&
+        r.metadata.namespace === selectedResource.metadata.namespace &&
+        r.metadata.name === selectedResource.metadata.name
+    )
+    // Update if found and resourceVersion changed (indicates K8s modification)
+    if (
+      updated &&
+      updated.metadata.resourceVersion !==
+        selectedResource.metadata.resourceVersion
+    ) {
+      selectedResource = updated
+    }
+  }
+})
+
 function getResourceStatus(resource: K8sResource): {
   status: string
   color?: "red" | "green" | "yellow" | "blue" | "indigo" | "purple" | "pink"

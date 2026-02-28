@@ -93,6 +93,27 @@ export function formatTimeShort(timestamp: string | undefined): string {
 }
 
 /**
+ * Format timestamp to absolute date/time
+ */
+export function formatAbsoluteTime(timestamp: string | undefined): string {
+  if (!timestamp) return "-"
+  try {
+    const date = new Date(timestamp)
+    return date.toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      second: '2-digit',
+      hour12: false
+    })
+  } catch {
+    return timestamp
+  }
+}
+
+/**
  * Get status variant color
  */
 export function getStatusColor(

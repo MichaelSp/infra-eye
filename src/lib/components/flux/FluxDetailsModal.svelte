@@ -4,9 +4,9 @@ import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte"
 import {
   ArrowsRepeatOutline,
   ChevronDownOutline,
-  ChevronUpOutline,
   ChevronLeftOutline,
   ChevronRightOutline,
+  ChevronUpOutline,
   ClockOutline,
   CodeOutline,
   ExclamationCircleOutline,
