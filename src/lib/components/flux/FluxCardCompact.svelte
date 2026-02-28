@@ -11,9 +11,9 @@ interface Props {
 let { resource, onClick }: Props = $props()
 
 // Get primary status
-const readyCondition = $derived(resource.status?.conditions?.find(
-  (c: any) => c.type === "Ready"
-))
+const readyCondition = $derived(
+  resource.status?.conditions?.find((c: any) => c.type === "Ready")
+)
 const isReady = $derived(readyCondition?.status === "True")
 
 function statusVariant(ready: boolean) {
@@ -47,11 +47,13 @@ function formatTime(timestamp: string | undefined) {
   }
 }
 
-const lastReconcile = $derived(formatTime(
-  resource.status?.lastHandledReconcileAt ||
-    resource.status?.lastAppliedRevision ||
-    resource.status?.artifact?.lastUpdateTime
-))
+const lastReconcile = $derived(
+  formatTime(
+    resource.status?.lastHandledReconcileAt ||
+      resource.status?.lastAppliedRevision ||
+      resource.status?.artifact?.lastUpdateTime
+  )
+)
 </script>
 
 <button

@@ -6,15 +6,15 @@ import {
   ExclamationCircleSolid,
   PauseSolid
 } from "flowbite-svelte-icons"
-import type { Writable } from "svelte/store"
 
 interface Props {
   resources: K8sResource[]
-  kindFilter: Writable<string>
-  statusFilter: Writable<string>
+  kindFilter: string
+  statusFilter: string
+  onFilterChange?: (kind: string, status: string) => void
 }
 
-let { resources, kindFilter, statusFilter }: Props = $props()
+let { resources, kindFilter, statusFilter, onFilterChange }: Props = $props()
 
 interface StatusCounts {
   ready: number
@@ -78,14 +78,15 @@ function getStatusCounts(resources: K8sResource[]): Map<string, StatusCounts> {
 }
 
 const statusCounts = $derived(getStatusCounts(resources))
-const totalFailingResources = $derived(Array.from(statusCounts.values()).reduce(
-  (sum, counts) => sum + counts.notReady,
-  0
-))
+const totalFailingResources = $derived(
+  Array.from(statusCounts.values()).reduce(
+    (sum, counts) => sum + counts.notReady,
+    0
+  )
+)
 
 function handleKindClick(kind: string) {
-  kindFilter.set(kind)
-  statusFilter.set("All statuses")
+  onFilterChange?.(kind, "All statuses")
 }
 
 function handleStatusClick(status: string) {
@@ -95,8 +96,7 @@ function handleStatusClick(status: string) {
     status === "Progressing" ||
     status === "Suspended"
   ) {
-    statusFilter.set(status)
-    kindFilter.set("all")
+    onFilterChange?.("all", status)
   }
 }
 </script>

@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { K8sResource } from "$lib/stores/k8s-resources";
-import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte";
+import type { K8sResource } from "$lib/stores/k8s-resources"
+import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte"
 import {
   ArrowsRepeatOutline,
   ChevronDownOutline,
@@ -11,10 +11,10 @@ import {
   CodeOutline,
   ExclamationCircleOutline,
   LinkOutline
-} from "flowbite-svelte-icons";
-import yaml from "js-yaml";
-import { createEventDispatcher } from "svelte";
-import { formatTime, getSourceInfo } from "./utils";
+} from "flowbite-svelte-icons"
+import yaml from "js-yaml"
+import { createEventDispatcher } from "svelte"
+import { formatTime, getSourceInfo } from "./utils"
 
 interface Props {
   resource: K8sResource
@@ -39,55 +39,76 @@ let reconcileError = $state<string | null>(null)
 let reconcileSuccess = $state(false)
 
 const sourceInfo = $derived(getSourceInfo(resource))
-const readyCondition = $derived(resource.status?.conditions?.find(
-  (c: any) => c.type === "Ready"
-))
+const readyCondition = $derived(
+  resource.status?.conditions?.find((c: any) => c.type === "Ready")
+)
 const isReady = $derived(readyCondition?.status === "True")
 const statusText = $derived(readyCondition?.message || "Unknown")
 const conditions = $derived(resource.status?.conditions || [])
 
-const lastReconcile = $derived(formatTime(
-  resource.status?.lastHandledReconcileAt ||
-    resource.status?.lastAppliedRevision ||
-    resource.status?.artifact?.lastUpdateTime
-))
+const lastReconcile = $derived(
+  formatTime(
+    resource.status?.lastHandledReconcileAt ||
+      resource.status?.lastAppliedRevision ||
+      resource.status?.artifact?.lastUpdateTime
+  )
+)
 
 // Determine if this resource has a clickable source reference
 const hasSourceReference = $derived(!!(sourceInfo.repo || sourceInfo.source))
 
 // Get the actual source resource to show its status
-const sourceResource = $derived(hasSourceReference ? allResources.find(r => {
-  const sourceName = sourceInfo.repo || sourceInfo.source
-  const sourceKind = getSourceKind(resource)
-  const sourceNamespace = getSourceNamespace(resource)
-  return r.kind === sourceKind &&
-         r.metadata.name === sourceName &&
-         r.metadata.namespace === sourceNamespace
-}) : undefined)
+const sourceResource = $derived(
+  hasSourceReference
+    ? allResources.find((r) => {
+        const sourceName = sourceInfo.repo || sourceInfo.source
+        const sourceKind = getSourceKind(resource)
+        const sourceNamespace = getSourceNamespace(resource)
+        return (
+          r.kind === sourceKind &&
+          r.metadata.name === sourceName &&
+          r.metadata.namespace === sourceNamespace
+        )
+      })
+    : undefined
+)
 
-const sourceStatus = $derived(sourceResource ? getResourceStatus(sourceResource) : null)
+const sourceStatus = $derived(
+  sourceResource ? getResourceStatus(sourceResource) : null
+)
 
 // Determine if this resource is a source type (GitRepository, HelmRepository, etc.)
-const isSourceType = $derived(["GitRepository", "HelmRepository", "OCIRepository", "Bucket"].includes(resource.kind))
+const isSourceType = $derived(
+  ["GitRepository", "HelmRepository", "OCIRepository", "Bucket"].includes(
+    resource.kind
+  )
+)
 
 // Find resources that use this source
-const usages = $derived(isSourceType ? findResourcesUsingSource(resource, allResources) : [])
+const usages = $derived(
+  isSourceType ? findResourcesUsingSource(resource, allResources) : []
+)
 
-function findResourcesUsingSource(source: K8sResource, resources: K8sResource[]): K8sResource[] {
+function findResourcesUsingSource(
+  source: K8sResource,
+  resources: K8sResource[]
+): K8sResource[] {
   const sourceName = source.metadata.name
   const sourceNamespace = source.metadata.namespace
   const sourceKind = source.kind
 
-  return resources.filter(res => {
+  return resources.filter((res) => {
     // Check HelmRelease references
     if (res.kind === "HelmRelease") {
       const ref = res.spec?.chart?.spec?.sourceRef
       if (!ref) return false
 
       const refNamespace = ref.namespace || res.metadata.namespace
-      return ref.kind === sourceKind &&
-             ref.name === sourceName &&
-             refNamespace === sourceNamespace
+      return (
+        ref.kind === sourceKind &&
+        ref.name === sourceName &&
+        refNamespace === sourceNamespace
+      )
     }
 
     // Check Kustomization references
@@ -96,9 +117,11 @@ function findResourcesUsingSource(source: K8sResource, resources: K8sResource[])
       if (!ref) return false
 
       const refNamespace = ref.namespace || res.metadata.namespace
-      return ref.kind === sourceKind &&
-             ref.name === sourceName &&
-             refNamespace === sourceNamespace
+      return (
+        ref.kind === sourceKind &&
+        ref.name === sourceName &&
+        refNamespace === sourceNamespace
+      )
     }
 
     return false

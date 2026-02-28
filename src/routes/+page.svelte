@@ -9,8 +9,12 @@ import {
   createK8sResourceStore,
   type K8sResource
 } from "$lib/stores/k8s-resources"
+import {
+  filterState,
+  clearFilters as clearFilterState
+} from "$lib/state/filters.svelte"
 import { Button, TabItem, Tabs } from "flowbite-svelte"
-import { derived, writable, type Readable } from "svelte/store"
+import { derived, type Readable } from "svelte/store"
 
 let { data } = $props()
 
@@ -45,22 +49,16 @@ const connectionStatus = derived(resourceStores, (stores) => {
   return { status: "disconnected" as const, errors }
 })
 
-// Filter state
-const kindFilter = writable("all")
-const namespaceFilter = writable("all")
-const statusFilter = writable("All statuses")
-const searchQuery = writable("")
-
-// Get unique kinds for filter dropdown
-const kinds = derived(allResources, ($all) => {
-  const uniqueKinds = new Set($all.map((r) => r.kind))
+// Get unique kinds for filter dropdown using $derived
+const kinds = $derived.by(() => {
+  const uniqueKinds = new Set($allResources.map((r) => r.kind))
   return ["all", ...Array.from(uniqueKinds).sort()]
 })
 
-// Get unique namespaces for filter dropdown
-const namespaces = derived(allResources, ($all) => {
+// Get unique namespaces for filter dropdown using $derived
+const namespaces = $derived.by(() => {
   const uniqueNamespaces = new Set(
-    $all.map((r) => r.metadata.namespace).filter(Boolean) as string[]
+    $allResources.map((r) => r.metadata.namespace).filter(Boolean) as string[]
   )
   return ["all", ...Array.from(uniqueNamespaces).sort()]
 })
@@ -76,52 +74,43 @@ function getResourceStatus(resource: K8sResource): string {
   return "Progressing"
 }
 
-// Filtered resources based on all filters
-const filtered = derived(
-  [allResources, kindFilter, namespaceFilter, statusFilter, searchQuery],
-  ([$all, $kf, $nf, $sf, $sq]) => {
-    let result = $all
+// Filtered resources based on all filters using $derived
+const filtered = $derived.by(() => {
+  let result = $allResources
 
-    // Filter by kind
-    if ($kf !== "all") {
-      result = result.filter((r) => r.kind === $kf)
-    }
-
-    // Filter by namespace
-    if ($nf !== "all") {
-      result = result.filter((r) => r.metadata.namespace === $nf)
-    }
-
-    // Filter by status
-    if ($sf !== "All statuses") {
-      result = result.filter((r) => getResourceStatus(r) === $sf)
-    }
-
-    // Filter by search query
-    if ($sq.trim()) {
-      const query = $sq.toLowerCase()
-      result = result.filter(
-        (r) =>
-          r.metadata.name.toLowerCase().includes(query) ||
-          r.kind.toLowerCase().includes(query) ||
-          r.metadata.namespace?.toLowerCase().includes(query)
-      )
-    }
-
-    return result
+  // Filter by kind
+  if (filterState.kind !== "all") {
+    result = result.filter((r) => r.kind === filterState.kind)
   }
-)
+
+  // Filter by namespace
+  if (filterState.namespace !== "all") {
+    result = result.filter(
+      (r) => r.metadata.namespace === filterState.namespace
+    )
+  }
+
+  // Filter by status
+  if (filterState.status !== "All statuses") {
+    result = result.filter((r) => getResourceStatus(r) === filterState.status)
+  }
+
+  // Filter by search query
+  if (filterState.search.trim()) {
+    const query = filterState.search.toLowerCase()
+    result = result.filter(
+      (r) =>
+        r.metadata.name.toLowerCase().includes(query) ||
+        r.kind.toLowerCase().includes(query) ||
+        r.metadata.namespace?.toLowerCase().includes(query)
+    )
+  }
+
+  return result
+})
 
 // Active tab
 let activeTab = $state("resources")
-
-// Clear all filters
-function clearFilters() {
-  kindFilter.set("all")
-  namespaceFilter.set("all")
-  statusFilter.set("All statuses")
-  searchQuery.set("")
-}
 </script>
 
 <svelte:head>
@@ -133,11 +122,19 @@ function clearFilters() {
 	{#if $connectionStatus.status === "connecting"}
 		<LoadingSpinner message="Connecting to Kubernetes cluster..." />
 	{:else if $allResources.length === 0}
-		<EmptyState kindFilter={$kindFilter} />
+		<EmptyState kindFilter={filterState.kind} />
 	{:else}
 		<!-- Summary Cards -->
 		<div class="mb-6">
-			<SummaryCards resources={$allResources} {kindFilter} {statusFilter} />
+			<SummaryCards
+				resources={$allResources}
+				kindFilter={filterState.kind}
+				statusFilter={filterState.status}
+				onFilterChange={(kind, status) => {
+					filterState.kind = kind
+					filterState.status = status
+				}}
+			/>
 		</div>
 
 		<!-- Tabs -->
@@ -147,28 +144,34 @@ function clearFilters() {
 					<!-- Filters -->
 					<div class="mt-6 mb-6">
 						<DropdownFilters
-							kinds={$kinds}
-							namespaces={$namespaces}
-							{kindFilter}
-							{namespaceFilter}
-							{statusFilter}
-							{searchQuery}
+							kinds={kinds}
+							namespaces={namespaces}
+							kindFilter={filterState.kind}
+							namespaceFilter={filterState.namespace}
+							statusFilter={filterState.status}
+							searchQuery={filterState.search}
+							onUpdate={(filters) => {
+								filterState.kind = filters.kind
+								filterState.namespace = filters.namespace
+								filterState.status = filters.status
+								filterState.search = filters.search
+							}}
 						/>
 						<div class="mt-3 flex justify-end">
-							<Button color="alternative" size="sm" onclick={clearFilters}>
+							<Button color="alternative" size="sm" onclick={clearFilterState}>
 								Clear Filters
 							</Button>
 						</div>
 					</div>
 
 					<!-- Resource Table -->
-					{#if $filtered.length === 0}
+					{#if filtered.length === 0}
 						<div class="text-center py-12 ">
 							<p class="text-lg mb-2">No resources found</p>
 							<p class="text-sm">Try adjusting your filters or search query</p>
 						</div>
 					{:else}
-						<ResourceTable resources={$filtered} />
+						<ResourceTable resources={filtered} />
 					{/if}
 				</TabItem>
 				

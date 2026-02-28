@@ -1,42 +1,46 @@
 <script lang="ts">
 import { Input, Select } from "flowbite-svelte"
 import { SearchOutline } from "flowbite-svelte-icons"
-import type { Writable } from "svelte/store"
 
 interface Props {
   kinds: string[]
   namespaces: string[]
   statuses?: string[]
-  kindFilter: Writable<string>
-  namespaceFilter: Writable<string>
-  statusFilter: Writable<string>
-  searchQuery: Writable<string>
+  kindFilter: string
+  namespaceFilter: string
+  statusFilter: string
+  searchQuery: string
+  onUpdate: (filters: {
+    kind: string
+    namespace: string
+    status: string
+    search: string
+  }) => void
 }
 
 let {
   kinds,
   namespaces,
-  statuses = [
-    "All statuses",
-    "Ready",
-    "NotReady",
-    "Progressing",
-    "Suspended"
-  ],
+  statuses = ["All statuses", "Ready", "NotReady", "Progressing", "Suspended"],
   kindFilter,
   namespaceFilter,
   statusFilter,
-  searchQuery
+  searchQuery,
+  onUpdate
 }: Props = $props()
 
-const kindOptions = $derived(kinds.map((k) => ({
-  value: k,
-  name: k === "all" ? "All kinds" : k
-})))
-const namespaceOptions = $derived(namespaces.map((n) => ({
-  value: n,
-  name: n === "all" ? "All namespaces" : n
-})))
+const kindOptions = $derived(
+  kinds.map((k) => ({
+    value: k,
+    name: k === "all" ? "All kinds" : k
+  }))
+)
+const namespaceOptions = $derived(
+  namespaces.map((n) => ({
+    value: n,
+    name: n === "all" ? "All namespaces" : n
+  }))
+)
 const statusOptions = $derived(statuses.map((s) => ({ value: s, name: s })))
 </script>
 
@@ -46,7 +50,16 @@ const statusOptions = $derived(statuses.map((s) => ({ value: s, name: s })))
       <Input
         placeholder="Search resources..."
         size="md"
-        bind:value={$searchQuery}
+        value={searchQuery}
+        oninput={(e) => {
+          const target = e.target as HTMLInputElement
+          onUpdate({
+            kind: kindFilter,
+            namespace: namespaceFilter,
+            status: statusFilter,
+            search: target.value
+          })
+        }}
       >
         <svelte:fragment slot="left">
           <SearchOutline class="w-4 h-4" />
@@ -57,21 +70,48 @@ const statusOptions = $derived(statuses.map((s) => ({ value: s, name: s })))
     <Select
       size="md"
       items={kindOptions}
-      bind:value={$kindFilter}
+      value={kindFilter}
+      onchange={(e) => {
+        const target = e.target as HTMLSelectElement
+        onUpdate({
+          kind: target.value,
+          namespace: namespaceFilter,
+          status: statusFilter,
+          search: searchQuery
+        })
+      }}
       class="w-40"
     />
 
     <Select
       size="md"
       items={namespaceOptions}
-      bind:value={$namespaceFilter}
+      value={namespaceFilter}
+      onchange={(e) => {
+        const target = e.target as HTMLSelectElement
+        onUpdate({
+          kind: kindFilter,
+          namespace: target.value,
+          status: statusFilter,
+          search: searchQuery
+        })
+      }}
       class="w-48"
     />
 
     <Select
       size="md"
       items={statusOptions}
-      bind:value={$statusFilter}
+      value={statusFilter}
+      onchange={(e) => {
+        const target = e.target as HTMLSelectElement
+        onUpdate({
+          kind: kindFilter,
+          namespace: namespaceFilter,
+          status: target.value,
+          search: searchQuery
+        })
+      }}
       class="w-44"
     />
   </div>
