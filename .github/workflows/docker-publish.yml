@@ -87,6 +87,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
+          prefix: "docker-v"
 
       - name: Extract metadata (tags, labels)
         id: meta
