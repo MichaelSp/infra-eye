@@ -1,5 +1,4 @@
 <script lang="ts">
-import Button from "$lib/components/Button.svelte"
 import DropdownFilters from "$lib/components/DropdownFilters.svelte"
 import EmptyState from "$lib/components/EmptyState.svelte"
 import LoadingSpinner from "$lib/components/LoadingSpinner.svelte"
@@ -10,7 +9,7 @@ import {
   createK8sResourceStore,
   type K8sResource
 } from "$lib/stores/k8s-resources"
-import { TabItem, Tabs } from "flowbite-svelte"
+import { Button, TabItem, Tabs } from "flowbite-svelte"
 import { derived, writable, type Readable } from "svelte/store"
 
 let { data } = $props()
@@ -159,7 +158,7 @@ function clearFilters() {
 							{searchQuery}
 						/>
 						<div class="mt-3 flex justify-end">
-							<Button variant="secondary" size="sm" onclick={clearFilters}>
+							<Button color="alternative" size="sm" onclick={clearFilters}>
 								Clear Filters
 							</Button>
 						</div>
