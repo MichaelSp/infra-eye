@@ -382,7 +382,20 @@ class K8sInformerManager {
         if (signal.aborted) break
 
         retryCount++
-        const delay = Math.min(1000 * 2 ** retryCount, 30000)
+
+        // Check for ETIMEDOUT errors - wait 30 seconds before retry
+        const isTimeoutError = err instanceof Error &&
+          (err.message.includes('ETIMEDOUT') ||
+           (err as any).code === 'ETIMEDOUT' ||
+           (err as any).errno === -60)
+
+        let delay: number
+        if (isTimeoutError) {
+          console.warn(`[K8s] Watch timeout for ${watchKey}, waiting 30 seconds before retry to avoid resource waste`)
+          delay = 30000 // 30 seconds for ETIMEDOUT
+        } else {
+          delay = Math.min(1000 * 2 ** retryCount, 30000)
+        }
 
         if (retryCount >= maxRetries) {
           console.error(`[K8s] Max retries reached for ${watchKey}`)
@@ -429,7 +442,16 @@ class K8sInformerManager {
   }
 
   private handleWatchError(watchKey: string, err: any): void {
-    if (err && (err as any).statusCode !== 404) {
+    // Check for ETIMEDOUT errors
+    const isTimeoutError = err &&
+      (err.message?.includes('ETIMEDOUT') ||
+       err.code === 'ETIMEDOUT' ||
+       err.errno === -60)
+
+    if (isTimeoutError) {
+      console.warn(`[K8s] Watch timeout error for ${watchKey}: ${err.message || err}`)
+      this.notifyError(watchKey, `Connection timeout (will retry): ${err.message || 'ETIMEDOUT'}`)
+    } else if (err && (err as any).statusCode !== 404) {
       console.error(`[K8s] Watch error for ${watchKey}:`, err)
       this.notifyError(watchKey, err?.message || "Unknown watch error")
     }
