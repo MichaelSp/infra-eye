@@ -1,7 +1,11 @@
 <script lang="ts">
 import { InfoCircleSolid } from "flowbite-svelte-icons"
 
-export let kindFilter: string
+interface Props {
+  kindFilter: string
+}
+
+let { kindFilter }: Props = $props()
 </script>
 
 <div class="flex items-center justify-center py-20">

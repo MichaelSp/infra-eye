@@ -16,9 +16,13 @@ import yaml from "js-yaml";
 import { createEventDispatcher } from "svelte";
 import { formatTime, getSourceInfo } from "./utils";
 
-export let resource: K8sResource
-export let open: boolean
-export let allResources: K8sResource[] = []
+interface Props {
+  resource: K8sResource
+  open: boolean
+  allResources?: K8sResource[]
+}
+
+let { resource, open = $bindable(), allResources = [] }: Props = $props()
 
 const dispatch = createEventDispatcher<{
   viewSource: {
@@ -28,46 +32,46 @@ const dispatch = createEventDispatcher<{
   }
 }>()
 
-let showConditions = true
-let showManifest = true
-let isReconciling = false
-let reconcileError: string | null = null
-let reconcileSuccess = false
+let showConditions = $state(true)
+let showManifest = $state(true)
+let isReconciling = $state(false)
+let reconcileError = $state<string | null>(null)
+let reconcileSuccess = $state(false)
 
-$: sourceInfo = getSourceInfo(resource)
-$: readyCondition = resource.status?.conditions?.find(
+const sourceInfo = $derived(getSourceInfo(resource))
+const readyCondition = $derived(resource.status?.conditions?.find(
   (c: any) => c.type === "Ready"
-)
-$: isReady = readyCondition?.status === "True"
-$: statusText = readyCondition?.message || "Unknown"
-$: conditions = resource.status?.conditions || []
+))
+const isReady = $derived(readyCondition?.status === "True")
+const statusText = $derived(readyCondition?.message || "Unknown")
+const conditions = $derived(resource.status?.conditions || [])
 
-$: lastReconcile = formatTime(
+const lastReconcile = $derived(formatTime(
   resource.status?.lastHandledReconcileAt ||
     resource.status?.lastAppliedRevision ||
     resource.status?.artifact?.lastUpdateTime
-)
+))
 
 // Determine if this resource has a clickable source reference
-$: hasSourceReference = !!(sourceInfo.repo || sourceInfo.source)
+const hasSourceReference = $derived(!!(sourceInfo.repo || sourceInfo.source))
 
 // Get the actual source resource to show its status
-$: sourceResource = hasSourceReference ? allResources.find(r => {
+const sourceResource = $derived(hasSourceReference ? allResources.find(r => {
   const sourceName = sourceInfo.repo || sourceInfo.source
   const sourceKind = getSourceKind(resource)
   const sourceNamespace = getSourceNamespace(resource)
   return r.kind === sourceKind &&
          r.metadata.name === sourceName &&
          r.metadata.namespace === sourceNamespace
-}) : undefined
+}) : undefined)
 
-$: sourceStatus = sourceResource ? getResourceStatus(sourceResource) : null
+const sourceStatus = $derived(sourceResource ? getResourceStatus(sourceResource) : null)
 
 // Determine if this resource is a source type (GitRepository, HelmRepository, etc.)
-$: isSourceType = ["GitRepository", "HelmRepository", "OCIRepository", "Bucket"].includes(resource.kind)
+const isSourceType = $derived(["GitRepository", "HelmRepository", "OCIRepository", "Bucket"].includes(resource.kind))
 
 // Find resources that use this source
-$: usages = isSourceType ? findResourcesUsingSource(resource, allResources) : []
+const usages = $derived(isSourceType ? findResourcesUsingSource(resource, allResources) : [])
 
 function findResourcesUsingSource(source: K8sResource, resources: K8sResource[]): K8sResource[] {
   const sourceName = source.metadata.name

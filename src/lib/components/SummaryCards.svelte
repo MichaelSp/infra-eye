@@ -8,9 +8,13 @@ import {
 } from "flowbite-svelte-icons"
 import type { Writable } from "svelte/store"
 
-export let resources: K8sResource[]
-export let kindFilter: Writable<string>
-export let statusFilter: Writable<string>
+interface Props {
+  resources: K8sResource[]
+  kindFilter: Writable<string>
+  statusFilter: Writable<string>
+}
+
+let { resources, kindFilter, statusFilter }: Props = $props()
 
 interface StatusCounts {
   ready: number
@@ -73,11 +77,11 @@ function getStatusCounts(resources: K8sResource[]): Map<string, StatusCounts> {
   return countsByKind
 }
 
-$: statusCounts = getStatusCounts(resources)
-$: totalFailingResources = Array.from(statusCounts.values()).reduce(
+const statusCounts = $derived(getStatusCounts(resources))
+const totalFailingResources = $derived(Array.from(statusCounts.values()).reduce(
   (sum, counts) => sum + counts.notReady,
   0
-)
+))
 
 function handleKindClick(kind: string) {
   kindFilter.set(kind)

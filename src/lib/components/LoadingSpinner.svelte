@@ -1,5 +1,9 @@
 <script lang="ts">
-export let message = "Loading..."
+interface Props {
+  message?: string
+}
+
+let { message = "Loading..." }: Props = $props()
 </script>
 
 <div class="flex items-center justify-center py-20">

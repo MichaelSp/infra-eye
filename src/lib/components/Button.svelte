@@ -2,15 +2,28 @@
 import { Button as FBButton } from "flowbite-svelte"
 import type { HTMLButtonAttributes } from "svelte/elements"
 
-export let variant: "primary" | "secondary" | "ghost" | "danger" = "primary"
-export let size: "xs" | "sm" | "md" | "lg" = "md"
-export let fullWidth: boolean = false
-export let loading: boolean = false
-export let disabled: boolean = false
-export let className: string = ""
+interface Props {
+  variant?: "primary" | "secondary" | "ghost" | "danger"
+  size?: "xs" | "sm" | "md" | "lg"
+  fullWidth?: boolean
+  loading?: boolean
+  disabled?: boolean
+  className?: string
+  [key: string]: any
+}
+
+let {
+  variant = "primary",
+  size = "md",
+  fullWidth = false,
+  loading = false,
+  disabled = false,
+  className = "",
+  ...restProps
+}: Props = $props()
 
 // Map local variants to Flowbite colors/props
-const color =
+const color = $derived(
   variant === "primary"
     ? "primary"
     : variant === "secondary"
@@ -18,6 +31,7 @@ const color =
       : variant === "danger"
         ? "red"
         : "alternative"
+)
 </script>
 
 <FBButton
@@ -26,7 +40,7 @@ const color =
   loading={loading}
   disabled={disabled}
   class={(fullWidth ? 'w-full ' : '') + className}
-  {...$$restProps}
+  {...restProps}
 >
   <slot />
 </FBButton>

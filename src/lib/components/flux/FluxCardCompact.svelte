@@ -3,14 +3,18 @@ import type { K8sResource } from "$lib/stores/k8s-resources"
 import { Badge } from "flowbite-svelte"
 import { ClockOutline } from "flowbite-svelte-icons"
 
-export let resource: K8sResource
-export let onClick: () => void
+interface Props {
+  resource: K8sResource
+  onClick: () => void
+}
+
+let { resource, onClick }: Props = $props()
 
 // Get primary status
-const readyCondition = resource.status?.conditions?.find(
+const readyCondition = $derived(resource.status?.conditions?.find(
   (c: any) => c.type === "Ready"
-)
-const isReady = readyCondition?.status === "True"
+))
+const isReady = $derived(readyCondition?.status === "True")
 
 function statusVariant(ready: boolean) {
   if (ready) return "green"
@@ -43,17 +47,17 @@ function formatTime(timestamp: string | undefined) {
   }
 }
 
-const lastReconcile = formatTime(
+const lastReconcile = $derived(formatTime(
   resource.status?.lastHandledReconcileAt ||
     resource.status?.lastAppliedRevision ||
     resource.status?.artifact?.lastUpdateTime
-)
+))
 </script>
 
 <button
 	type="button"
 	class="w-full p-4 rounded-xl border shadow-lg transition-all duration-200 cursor-pointer hover:-translate-y-0.5 active:scale-[0.98] text-left group"
-	on:click={onClick}
+	onclick={onClick}
 >
 	<!-- Header -->
 	<div class="flex items-start justify-between gap-2 mb-3">

@@ -3,10 +3,14 @@ import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte";
 import type { K8sResource } from "$lib/stores/k8s-resources";
 import { Badge } from "flowbite-svelte";
 
-export let resources: K8sResource[]
+interface Props {
+  resources: K8sResource[]
+}
 
-let selectedResource: K8sResource | null = null
-let showModal = false
+let { resources }: Props = $props()
+
+let selectedResource = $state<K8sResource | null>(null)
+let showModal = $state(false)
 
 function getResourceStatus(resource: K8sResource): {
   status: string

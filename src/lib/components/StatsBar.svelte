@@ -1,6 +1,10 @@
 <script lang="ts">
-export let totalCount: number
-export let resourceCounts: Map<string, number>
+interface Props {
+  totalCount: number
+  resourceCounts: Map<string, number>
+}
+
+let { totalCount, resourceCounts }: Props = $props()
 </script>
 
 <div class="flex items-center gap-4 text-sm ">

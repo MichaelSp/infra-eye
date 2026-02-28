@@ -6,8 +6,12 @@ import {
   InfoCircleSolid
 } from "flowbite-svelte-icons"
 
-export let status: "connecting" | "connected" | "error" | "disconnected"
-export let errors: (string | null)[] = []
+interface Props {
+  status: "connecting" | "connected" | "error" | "disconnected"
+  errors?: (string | null)[]
+}
+
+let { status, errors = [] }: Props = $props()
 </script>
 
 <div>

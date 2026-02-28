@@ -3,29 +3,41 @@ import { Input, Select } from "flowbite-svelte"
 import { SearchOutline } from "flowbite-svelte-icons"
 import type { Writable } from "svelte/store"
 
-export let kinds: string[]
-export let namespaces: string[]
-export let statuses: string[] = [
-  "All statuses",
-  "Ready",
-  "NotReady",
-  "Progressing",
-  "Suspended"
-]
-export let kindFilter: Writable<string>
-export let namespaceFilter: Writable<string>
-export let statusFilter: Writable<string>
-export let searchQuery: Writable<string>
+interface Props {
+  kinds: string[]
+  namespaces: string[]
+  statuses?: string[]
+  kindFilter: Writable<string>
+  namespaceFilter: Writable<string>
+  statusFilter: Writable<string>
+  searchQuery: Writable<string>
+}
 
-$: kindOptions = kinds.map((k) => ({
+let {
+  kinds,
+  namespaces,
+  statuses = [
+    "All statuses",
+    "Ready",
+    "NotReady",
+    "Progressing",
+    "Suspended"
+  ],
+  kindFilter,
+  namespaceFilter,
+  statusFilter,
+  searchQuery
+}: Props = $props()
+
+const kindOptions = $derived(kinds.map((k) => ({
   value: k,
   name: k === "all" ? "All kinds" : k
-}))
-$: namespaceOptions = namespaces.map((n) => ({
+})))
+const namespaceOptions = $derived(namespaces.map((n) => ({
   value: n,
   name: n === "all" ? "All namespaces" : n
-}))
-$: statusOptions = statuses.map((s) => ({ value: s, name: s }))
+})))
+const statusOptions = $derived(statuses.map((s) => ({ value: s, name: s })))
 </script>
 
 <div class="rounded-lg p-4">
