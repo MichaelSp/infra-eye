@@ -93,6 +93,9 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: main
+          patchList: fix, chore, docs
+          noVersionBumpBehavior: current
+          skipInvalidTags: true
 
       - name: Extract metadata (tags, labels)
         id: meta
