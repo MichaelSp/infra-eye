@@ -2,8 +2,13 @@ FROM node:20-alpine3.20 AS stage
 
 WORKDIR /app
 
-COPY package*.json svelte.config.js ./
-RUN npm ci && npm run prepare
+# Copy only package files first for better caching of npm install
+COPY package*.json ./
+RUN npm ci
+
+# Copy svelte config and run prepare
+COPY svelte.config.js ./
+RUN npm run prepare
 
 COPY . .
 RUN npm run build
