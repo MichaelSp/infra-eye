@@ -1,4 +1,4 @@
-FROM node:20-alpine3.20 AS stage
+FROM node:24-alpine3.20 AS stage
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm run prepare
 COPY . .
 RUN npm run build
 
-FROM node:20-alpine3.20
+FROM node:24-alpine3.20
 WORKDIR /app
 
 # Copy pre-installed node_modules from build stage instead of reinstalling
