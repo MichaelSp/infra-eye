@@ -38,7 +38,7 @@
     "flowbite-svelte": "^1.30.0",
     "flowbite-svelte-icons": "^3.0.1",
     "happy-dom": "^20.0.11",
-    "jsdom": "^27.2.0",
+    "jsdom": "^29.0.0",
     "serve": "^14.2.0",
     "svelte": "^5.45.6",
     "svelte-check": "^4.3.4",
