@@ -50,8 +50,7 @@ podAnnotations: {}
 # For more information checkout: https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/
 podLabels: {}
 
-podSecurityContext: {}
-  # fsGroup: 2000
+podSecurityContext: {} # fsGroup: 2000
 
 securityContext: {}
   # capabilities:
@@ -76,10 +75,10 @@ ingress:
     # kubernetes.io/ingress.class: nginx
     # kubernetes.io/tls-acme: "true"
   hosts:
-    - host: chart-example.local
-      paths:
-        - path: /
-          pathType: ImplementationSpecific
+  - host: chart-example.local
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
   tls: []
     # - secretName: chart-example-tls
     #   hosts:
@@ -98,7 +97,7 @@ httpRoute:
   - name: gateway
     sectionName: http
     # namespace: default
-  # Hostnames matching HTTP header.
+    # Hostnames matching HTTP header.
   hostnames:
   - chart-example.local
   # List of rules and filters applied.
@@ -153,7 +152,7 @@ autoscaling:
   targetCPUUtilizationPercentage: 80
   # targetMemoryUtilizationPercentage: 80
 
-# Additional volumes on the output Deployment definition.
+  # Additional volumes on the output Deployment definition.
 volumes: []
   # - name: foo
   #   secret:
