@@ -46,7 +46,7 @@ jobs:
       
       - name: Helm unittest
         run: |
-          helm plugin install https://github.com/helm-unittest/helm-unittest
+          helm plugin install  --verify=false https://github.com/helm-unittest/helm-unittest
           helm unittest ${{ env.CHART_PATH }}
 
       - name: Helm template dry-run

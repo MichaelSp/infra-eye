@@ -62,7 +62,7 @@ jobs:
 
       - name: Package Helm chart
         run: |
-          helm package ${{ env.CHART_PATH }} --destination .helm-charts
+          helm package ${{ env.CHART_PATH }} --destination .
 
       - name: Log in to Container Registry
         uses: docker/login-action@v4
@@ -74,12 +74,14 @@ jobs:
       - name: Push Helm chart to OCI registry
         run: |
           CHART_VERSION="${{ steps.chart-version.outputs.version }}"
-          CHART_FILE=".helm-${{ env.CHART_PATH }}-${CHART_VERSION}.tgz"
+          CHART_NAME=$(basename "${{ env.CHART_PATH }}")
+          CHART_FILE="$CHART_NAME-${CHART_VERSION}.tgz"
 
           if [ -f "$CHART_FILE" ]; then
             OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
             helm push "$CHART_FILE" oci://${{ env.REGISTRY }}/$OWNER_LC/infra-eye
             echo "Successfully pushed chart version $CHART_VERSION"
+            echo "chart_file=$CHART_FILE" >> $GITHUB_OUTPUT
           else
             echo "Error: Chart file not found: $CHART_FILE"
             ls -la .helm-charts/
@@ -93,7 +95,8 @@ jobs:
         run: |
           VERSION="${{ steps.chart-version.outputs.version }}"
           RELEASE_TAG="chart-v${VERSION}"
-          CHART_FILE=".helm-${{ env.CHART_PATH }}-${VERSION}.tgz"
+          CHART_FILE="${{ steps.package-and-publish.outputs.chart_file }}"
+          OWNER_LC=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
 
           # Create release notes
           cat > release_notes.md << EOF
@@ -103,11 +106,10 @@ jobs:
 
           \`\`\`bash
           # Pull from OCI registry
-          OWNER_LC=\$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          helm pull oci://${{ env.REGISTRY }}/\${OWNER_LC}/infra-eye --version ${VERSION}
+          helm pull oci://${{ env.REGISTRY }}/${OWNER_LC}/infra-eye --version ${VERSION}
 
           # Install
-          helm install infra-eye oci://${{ env.REGISTRY }}/\${OWNER_LC}/infra-eye --version ${VERSION}
+          helm install infra-eye oci://${{ env.REGISTRY }}/${OWNER_LC}/infra-eye --version ${VERSION}
           \`\`\`
 
           ### Chart Information
