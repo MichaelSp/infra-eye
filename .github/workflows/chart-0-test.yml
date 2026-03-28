@@ -43,6 +43,11 @@ jobs:
       - name: Lint Helm chart
         run: |
           helm lint ${{ env.CHART_PATH }}
+      
+      - name: Helm unittest
+        run: |
+          helm plugin install https://github.com/helm-unittest/helm-unittest
+          helm unittest ${{ env.CHART_PATH }}
 
       - name: Helm template dry-run
         run: |
@@ -78,7 +83,7 @@ jobs:
         id: bumppr
         run: |
           VERSION="${{ steps.semver.outputs.next }}"
-          BRANCH="chore/chart-bump-v$VERSION"
+          BRANCH="chore/bump-$VERSION"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git checkout -b "$BRANCH"
