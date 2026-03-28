@@ -91,7 +91,12 @@ jobs:
         run: |
           CHANGED=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }})
           echo "Changed files: $CHANGED"
-          if [[ "$CHANGED" == "${{ env.CHART_PATH }}/Chart.yaml" ]]; then
+          ## if on PR both is false
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            echo "On pull request, skipping version bump and tag creation."
+            echo "bumpVersion=false" >> $GITHUB_OUTPUT
+            echo "createTag=false" >> $GITHUB_OUTPUT
+          elif [[ "$CHANGED" == "${{ env.CHART_PATH }}/Chart.yaml" ]]; then
             echo "Only Chart.yaml changed. Will create tag but not bump version."
             echo "bumpVersion=false" >> $GITHUB_OUTPUT
             echo "createTag=true" >> $GITHUB_OUTPUT
