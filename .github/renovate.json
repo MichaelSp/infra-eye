@@ -5,9 +5,7 @@
     {
       "customType": "regex",
       "fileMatch": ["^chart/.+/Chart\\.yaml$"],
-      "matchStrings": [
-        "appVersion:\\s*\"?(?<currentValue>[^\"\\s]+)\"?"
-      ],
+      "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"\\s]+)\"?"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "MichaelSp/infra-eye",
       "extractVersionTemplate": "^v?(?<version>.*)$"

@@ -5,9 +5,10 @@ import { Badge } from "flowbite-svelte"
 
 interface Props {
   resources: K8sResource[]
+  allResources?: K8sResource[]
 }
 
-let { resources }: Props = $props()
+let { resources, allResources = resources }: Props = $props()
 
 let selectedResource = $state<K8sResource | null>(null)
 let showModal = $state(false)
@@ -15,18 +16,20 @@ let showModal = $state(false)
 // Keep selectedResource in sync with updated resources when modal is open
 $effect(() => {
   if (showModal && selectedResource) {
+    const currentSelection = selectedResource
+
     // Find the updated version of the selected resource
     const updated = resources.find(
       (r) =>
-        r.kind === selectedResource.kind &&
-        r.metadata.namespace === selectedResource.metadata.namespace &&
-        r.metadata.name === selectedResource.metadata.name
+        r.kind === currentSelection.kind &&
+        r.metadata.namespace === currentSelection.metadata.namespace &&
+        r.metadata.name === currentSelection.metadata.name
     )
     // Update if found and resourceVersion changed (indicates K8s modification)
     if (
       updated &&
       updated.metadata.resourceVersion !==
-        selectedResource.metadata.resourceVersion
+        currentSelection.metadata.resourceVersion
     ) {
       selectedResource = updated
     }
@@ -81,8 +84,8 @@ function handleViewSource(
 ) {
   const { kind, namespace, name } = event.detail
 
-  // Find the source resource from the resources prop
-  const sourceResource = resources.find(
+  // Find the source resource from the full dataset (not just filtered rows)
+  const sourceResource = allResources.find(
     (r) =>
       r.kind === kind &&
       r.metadata.namespace === namespace &&
@@ -148,6 +151,6 @@ function handleViewSource(
     resource={selectedResource}
     bind:open={showModal}
     on:viewSource={handleViewSource}
-    allResources={resources}
+    allResources={allResources}
   />
 {/if}

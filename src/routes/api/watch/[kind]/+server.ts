@@ -82,6 +82,17 @@ export const GET: RequestHandler = async ({ params, url }) => {
           console.error("[SSE] Failed to get current context:", err)
         }
 
+        // Debounce timers for MODIFIED events only
+        const debounceTimers = new Map<string, NodeJS.Timeout>()
+        const debounceBuffer = new Map<string, any>()
+        const DEBOUNCE_MS = 500
+
+        function getResourceKey(resource: any): string {
+          const ns = resource?.metadata?.namespace || "_cluster"
+          const name = resource?.metadata?.name || "_unknown"
+          return `${ns}/${name}`
+        }
+
         unsubscribe = informerManager.subscribe(
           kind,
           (event: ResourceEvent) => {
@@ -99,7 +110,41 @@ export const GET: RequestHandler = async ({ params, url }) => {
                 },
                 "error"
               )
+            } else if (event.type === "MODIFIED") {
+              // Debounce MODIFIED events only
+              const key = getResourceKey(event.resource)
+
+              // Clear any pending timer for this resource
+              const existingTimer = debounceTimers.get(key)
+              if (existingTimer) {
+                clearTimeout(existingTimer)
+              }
+
+              // Store latest version
+              debounceBuffer.set(key, event.resource)
+
+              // Emit after debounce delay
+              const timer = setTimeout(() => {
+                if (isClosed) return
+
+                const latest = debounceBuffer.get(key)
+                if (latest) {
+                  sendEvent(
+                    {
+                      type: "MODIFIED",
+                      resource: latest,
+                      timestamp: new Date().toISOString()
+                    },
+                    "resource"
+                  )
+                  debounceBuffer.delete(key)
+                }
+                debounceTimers.delete(key)
+              }, DEBOUNCE_MS)
+
+              debounceTimers.set(key, timer)
             } else {
+              // ADDED/DELETED: emit immediately without debounce
               sendEvent(
                 {
                   type: event.type,
@@ -112,6 +157,14 @@ export const GET: RequestHandler = async ({ params, url }) => {
           },
           namespace
         )
+
+        // Store debounce timers in closure for cleanup
+        const cleanup = () => {
+          debounceTimers.forEach((timer) => clearTimeout(timer))
+          debounceTimers.clear()
+          debounceBuffer.clear()
+        }
+        ;(controller as any).__debounceCleanup = cleanup
 
         // Don't log every subscription to reduce noise
         // console.log(`[SSE] Subscribed to ${kind}${namespace ? `:${namespace}` : ''}`);
@@ -162,6 +215,12 @@ export const GET: RequestHandler = async ({ params, url }) => {
       return () => {
         // Mark as closed first to prevent any further operations
         isClosed = true
+
+        // Clear debounce timers if they exist
+        const cleanup = (controller as any).__debounceCleanup
+        if (cleanup) {
+          cleanup()
+        }
 
         // Clear keep-alive
         clearInterval(keepAliveInterval)

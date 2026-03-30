@@ -4,15 +4,15 @@ import EmptyState from "$lib/components/EmptyState.svelte"
 import LoadingSpinner from "$lib/components/LoadingSpinner.svelte"
 import ResourceTable from "$lib/components/ResourceTable.svelte"
 import SummaryCards from "$lib/components/SummaryCards.svelte"
+import {
+  clearFilters as clearFilterState,
+  filterState
+} from "$lib/state/filters.svelte"
 import type { ResourceStore } from "$lib/stores/k8s-resources"
 import {
   createK8sResourceStore,
   type K8sResource
 } from "$lib/stores/k8s-resources"
-import {
-  filterState,
-  clearFilters as clearFilterState
-} from "$lib/state/filters.svelte"
 import { Button, TabItem, Tabs } from "flowbite-svelte"
 import { derived, type Readable } from "svelte/store"
 
@@ -23,8 +23,8 @@ const resourceStores: Readable<ResourceStore>[] = [
   createK8sResourceStore("helmreleases.helm.toolkit.fluxcd.io"),
   createK8sResourceStore("kustomizations.kustomize.toolkit.fluxcd.io"),
   createK8sResourceStore("helmcharts.source.toolkit.fluxcd.io"),
-  createK8sResourceStore("helmrepositories.source.toolkit.fluxcd.io")
-  //createK8sResourceStore("gitrepositories.source.toolkit.fluxcd.io")
+  createK8sResourceStore("helmrepositories.source.toolkit.fluxcd.io"),
+  createK8sResourceStore("gitrepositories.source.toolkit.fluxcd.io")
 ]
 
 // Combine all resources into a single store
@@ -171,7 +171,7 @@ let activeTab = $state("resources")
 							<p class="text-sm">Try adjusting your filters or search query</p>
 						</div>
 					{:else}
-						<ResourceTable resources={filtered} />
+						<ResourceTable resources={filtered}  allResources={$allResources}/>
 					{/if}
 				</TabItem>
 				
