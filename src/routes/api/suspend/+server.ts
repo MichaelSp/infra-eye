@@ -16,20 +16,25 @@ function kindToPlural(kind: string): string {
 export const POST: RequestHandler = async ({ request }) => {
   try {
     const body = await request.json()
-    const { namespace, name, kind, group, version, force } = body
+    const { namespace, name, kind, group, version, suspended } = body
 
-    // Validate required fields
-    if (!namespace || !name || !kind || !version) {
+    if (
+      !namespace ||
+      !name ||
+      !kind ||
+      !version ||
+      typeof suspended !== "boolean"
+    ) {
       return json(
         {
-          error: "Missing required fields: namespace, name, kind, version",
-          received: { namespace, name, kind, group, version }
+          error:
+            "Missing required fields: namespace, name, kind, version, suspended(boolean)",
+          received: { namespace, name, kind, group, version, suspended }
         },
         { status: 400 }
       )
     }
 
-    // Group can be empty string for core resources, but for Flux it should always have a group
     if (group === null || group === undefined) {
       return json(
         {
@@ -41,9 +46,10 @@ export const POST: RequestHandler = async ({ request }) => {
       )
     }
 
-    console.log(
-      `[Reconcile] Triggering ${force ? "force-" : ""}reconcile for ${kind}/${name} in ${namespace} (group: ${group || "core"})`
-    )
+    const plural = kindToPlural(kind)
+    if (!plural) {
+      return json({ error: `Invalid kind format: ${kind}` }, { status: 400 })
+    }
 
     const kc = new KubeConfig()
     if (process.env.KUBERNETES_SERVICE_HOST) {
@@ -54,40 +60,12 @@ export const POST: RequestHandler = async ({ request }) => {
       kc.loadFromDefault()
     }
 
-    // Parse plural from kind
-    const plural = kindToPlural(kind)
-    if (!plural) {
-      return json({ error: `Invalid kind format: ${kind}` }, { status: 400 })
-    }
-
-    // Prepare the patch
-    const timestamp = new Date().toISOString()
-    const annotations: Record<string, string> = {
-      "reconcile.fluxcd.io/requestedAt": timestamp
-    }
-
-    // Add force reconcile annotation if requested
-    if (force) {
-      annotations["reconcile.fluxcd.io/forceAt"] = timestamp
-    }
-
     const patch = {
-      metadata: {
-        annotations
+      spec: {
+        suspend: suspended
       }
     }
 
-    console.log(`[Reconcile] Calling patchNamespacedCustomObject with:`, {
-      group,
-      version,
-      namespace,
-      plural,
-      name,
-      annotations
-    })
-
-    // Make a raw HTTPS request with the correct Content-Type header
-    // This is necessary because the client library doesn't easily support merge-patch+json
     const cluster = kc.getCurrentCluster()
     if (!cluster) {
       throw new Error("No cluster configured")
@@ -116,13 +94,15 @@ export const POST: RequestHandler = async ({ request }) => {
 
     await new Promise<void>((resolve, reject) => {
       const req = https.request(requestOpts, (res) => {
-        let body = ""
-        res.on("data", (chunk) => (body += chunk))
+        let responseBody = ""
+        res.on("data", (chunk) => (responseBody += chunk))
         res.on("end", () => {
           if (res.statusCode && res.statusCode >= 400) {
-            const error: any = new Error(`HTTP ${res.statusCode}: ${body}`)
+            const error: any = new Error(
+              `HTTP ${res.statusCode}: ${responseBody}`
+            )
             error.statusCode = res.statusCode
-            error.body = body
+            error.body = responseBody
             reject(error)
             return
           }
@@ -134,22 +114,16 @@ export const POST: RequestHandler = async ({ request }) => {
       req.end()
     })
 
-    console.log(`[Reconcile] Patch successful`)
-
-    console.log(
-      `[Reconcile] Successfully triggered ${force ? "force-" : ""}reconcile for ${kind}/${name}`
-    )
-
     return json({
       success: true,
-      message: `${force ? "Force-reconcile" : "Reconcile"} triggered successfully`,
-      timestamp
+      message: suspended
+        ? "Reconciliation suspended successfully"
+        : "Reconciliation resumed successfully"
     })
   } catch (error: any) {
-    console.error("[Reconcile] Error:", error)
     return json(
       {
-        error: error?.message || "Failed to trigger reconcile",
+        error: error?.message || "Failed to update suspend state",
         details: error?.body || error
       },
       { status: 500 }

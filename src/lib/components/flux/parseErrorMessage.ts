@@ -36,15 +36,15 @@ function extractEmbeddedJson(message: string): {
   }
 
   // Fallback for messages that contain an inline JSON object.
-  const firstBrace = message.indexOf('{')
+  const firstBrace = message.indexOf("{")
   if (firstBrace >= 0) {
     let depth = 0
     let end = -1
 
     for (let i = firstBrace; i < message.length; i++) {
       const char = message[i]
-      if (char === '{') depth += 1
-      if (char === '}') {
+      if (char === "{") depth += 1
+      if (char === "}") {
         depth -= 1
         if (depth === 0) {
           end = i
@@ -55,7 +55,10 @@ function extractEmbeddedJson(message: string): {
 
     if (end > firstBrace) {
       const json = message.substring(firstBrace, end + 1)
-      const error = message.substring(end + 1).replace(/^":?\s*/, "").trim()
+      const error = message
+        .substring(end + 1)
+        .replace(/^":?\s*/, "")
+        .trim()
       return { json, error }
     }
   }
@@ -74,7 +77,7 @@ function extractValidationError(errorString: string): string {
     /field[^:]*is invalid:\s*.+$/i,
     /Invalid value:\s*"[^"]*"\s*:\s*.+$/i,
     /admission webhook.+denied the request:\s*.+$/i,
-    /patch:\s*.+$/i,
+    /patch:\s*.+$/i
   ]
 
   for (const pattern of patterns) {
@@ -115,15 +118,15 @@ function truncateJson(jsonString: string, maxLength: number = 150): string {
   // Try to find a logical break point
   const truncated = jsonString.substring(0, maxLength)
   const lastBrace = Math.max(
-    truncated.lastIndexOf('}'),
-    truncated.lastIndexOf(']')
+    truncated.lastIndexOf("}"),
+    truncated.lastIndexOf("]")
   )
 
   if (lastBrace > maxLength - 50) {
-    return truncated.substring(0, lastBrace + 1) + '...}'
+    return truncated.substring(0, lastBrace + 1) + "...}"
   }
 
-  return truncated + '...'
+  return truncated + "..."
 }
 
 /**
@@ -140,16 +143,16 @@ export function parseErrorMessage(message: string): ParsedError {
 
   const extracted = extractEmbeddedJson(message)
   const hasKnownErrorMarkers =
-    message.includes('json:') ||
-    message.includes('Invalid value:') ||
-    message.includes('is invalid:') ||
-    message.includes('denied the request:')
+    message.includes("json:") ||
+    message.includes("Invalid value:") ||
+    message.includes("is invalid:") ||
+    message.includes("denied the request:")
 
   if (extracted) {
     const summary = message
       .substring(0, message.indexOf(extracted.json))
       .trim()
-      .replace(/['"]+$/, '')
+      .replace(/['"]+$/, "")
 
     const actualError = extractValidationError(extracted.error)
 
@@ -170,9 +173,9 @@ export function parseErrorMessage(message: string): ParsedError {
   }
 
   // Check for other complex patterns
-  if (message.includes('\n') || message.length > 500) {
+  if (message.includes("\n") || message.length > 500) {
     return {
-      summary: message.split('\n')[0],
+      summary: message.split("\n")[0],
       isComplex: true
     }
   }
@@ -186,15 +189,17 @@ export function parseErrorMessage(message: string): ParsedError {
 /**
  * Get a short summary suitable for table display
  */
-export function getSummaryMessage(message: string, maxLength: number = 100): string {
+export function getSummaryMessage(
+  message: string,
+  maxLength: number = 100
+): string {
   const parsed = parseErrorMessage(message)
   const full = parsed.actualError || parsed.summary || message
 
   if (full.length > maxLength) {
-    return full.substring(0, maxLength) + '...'
+    return full.substring(0, maxLength) + "..."
   }
   return full
 }
 
 export { formatJson, truncateJson }
-

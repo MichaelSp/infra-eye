@@ -29,6 +29,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v6
@@ -73,6 +75,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
@@ -96,7 +100,8 @@ jobs:
           branch: main
           prefix: "docker-"
           patchList: fix, chore, docs
-          noVersionBumpBehavior: current
+          noVersionBumpBehavior: patch
+          noNewCommitBehavior: current
           skipInvalidTags: true
 
       - name: Extract metadata (tags, labels)

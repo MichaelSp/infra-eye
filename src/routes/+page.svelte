@@ -166,13 +166,12 @@ let activeTab = $state("resources")
 
 					<!-- Resource Table -->
 					{#if filtered.length === 0}
-						<div class="text-center py-12 ">
+						<div class="text-center py-6 ">
 							<p class="text-lg mb-2">No resources found</p>
 							<p class="text-sm">Try adjusting your filters or search query</p>
 						</div>
-					{:else}
-						<ResourceTable resources={filtered}  allResources={$allResources}/>
 					{/if}
+					<ResourceTable resources={filtered} allResources={$allResources} />
 				</TabItem>
 				
 				<TabItem open={activeTab === "topology"} title="Topology Graph" onclick={() => activeTab = "topology"}>

@@ -1,25 +1,22 @@
 <script lang="ts">
-  import {
-    ChevronDownOutline,
-    ChevronUpOutline,
-  } from "flowbite-svelte-icons";
-  import ManifestViewer from "./ManifestViewer.svelte";
-  import { jsonStringToYaml } from "./manifest";
-  import { parseErrorMessage } from "./parseErrorMessage";
+import { ChevronDownOutline, ChevronUpOutline } from "flowbite-svelte-icons"
+import ManifestViewer from "./ManifestViewer.svelte"
+import { jsonStringToYaml } from "./manifest"
+import { parseErrorMessage } from "./parseErrorMessage"
 
-  interface Props {
-    message: string
-  }
+interface Props {
+  message: string
+}
 
-  let { message }: Props = $props()
+let { message }: Props = $props()
 
-  let showDetails = $state(false)
+let showDetails = $state(false)
 
-  const parsed = $derived(parseErrorMessage(message))
+const parsed = $derived(parseErrorMessage(message))
 
-  const embeddedYaml = $derived(
-    parsed.embeddedJson ? jsonStringToYaml(parsed.embeddedJson) : ""
-  )
+const embeddedYaml = $derived(
+  parsed.embeddedJson ? jsonStringToYaml(parsed.embeddedJson) : ""
+)
 </script>
 
 <div class="space-y-2">
