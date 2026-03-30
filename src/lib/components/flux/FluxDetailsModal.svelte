@@ -1,8 +1,6 @@
 <script lang="ts">
 import type { K8sResource } from "$lib/stores/k8s-resources"
 import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte"
-import type { K8sResource } from "$lib/stores/k8s-resources"
-import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte"
 import {
   ArrowsRepeatOutline,
   ChevronDownOutline,

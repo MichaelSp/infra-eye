@@ -123,10 +123,10 @@ function truncateJson(jsonString: string, maxLength: number = 150): string {
   )
 
   if (lastBrace > maxLength - 50) {
-    return truncated.substring(0, lastBrace + 1) + "...}"
+    return `${truncated.substring(0, lastBrace + 1)}...}`
   }
 
-  return truncated + "..."
+  return `${truncated}...`
 }
 
 /**
@@ -197,7 +197,7 @@ export function getSummaryMessage(
   const full = parsed.actualError || parsed.summary || message
 
   if (full.length > maxLength) {
-    return full.substring(0, maxLength) + "..."
+    return `${full.substring(0, maxLength)}...`
   }
   return full
 }
