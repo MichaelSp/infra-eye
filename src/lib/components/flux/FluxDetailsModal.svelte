@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { K8sResource } from "$lib/stores/k8s-resources"
-import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte"
+import type { K8sResource } from "$lib/stores/k8s-resources";
+import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte";
 import {
   ArrowsRepeatOutline,
   ChevronDownOutline,
@@ -11,10 +11,12 @@ import {
   CodeOutline,
   ExclamationCircleOutline,
   LinkOutline
-} from "flowbite-svelte-icons"
-import yaml from "js-yaml"
-import { createEventDispatcher } from "svelte"
-import { formatTime, getSourceInfo } from "./utils"
+} from "flowbite-svelte-icons";
+import { createEventDispatcher } from "svelte";
+import ConditionMessage from "./ConditionMessage.svelte";
+import ManifestViewer from "./ManifestViewer.svelte";
+import { resourceToYaml } from "./manifest";
+import { formatTime, getSourceInfo } from "./utils";
 
 interface Props {
   resource: K8sResource
@@ -203,43 +205,6 @@ function parseApiVersion(apiVersion: string | undefined): {
     return { group: "", version: parts[0] }
   }
   return { group: parts[0], version: parts[1] }
-}
-
-// Filter out noisy fields from the resource manifest
-function filterResourceManifest(resource: K8sResource): any {
-  const filtered = JSON.parse(JSON.stringify(resource))
-
-  // Collapse managedFields - show it exists but hide the content
-  if (filtered.metadata?.managedFields) {
-    filtered.metadata.managedFields = `[${filtered.metadata.managedFields.length} entries collapsed]`
-  }
-
-  // Collapse last-applied-configuration annotation - show it exists but hide the content
-  if (
-    filtered.metadata?.annotations?.[
-      "kubectl.kubernetes.io/last-applied-configuration"
-    ]
-  ) {
-    const original =
-      filtered.metadata.annotations[
-        "kubectl.kubernetes.io/last-applied-configuration"
-      ]
-    filtered.metadata.annotations[
-      "kubectl.kubernetes.io/last-applied-configuration"
-    ] = `[${original.length} chars collapsed]`
-  }
-
-  return filtered
-}
-
-// Convert resource to YAML format
-function resourceToYaml(resource: K8sResource): string {
-  const filtered = filterResourceManifest(resource)
-  return yaml.dump(filtered, {
-    indent: 2,
-    lineWidth: -1,
-    noRefs: true
-  })
 }
 
 async function triggerReconcile(force = false) {
@@ -495,7 +460,9 @@ function handleViewUsage(usage: K8sResource) {
 					/>
 					<div>
 						<div class="text-sm font-medium  mb-1">Status Message</div>
-						<div class="text-sm ">{statusText}</div>
+						<div class="text-sm ">
+							<ConditionMessage message={statusText} />
+						</div>
 					</div>
 				</div>
 			{/if}
@@ -531,7 +498,9 @@ function handleViewUsage(usage: K8sResource) {
 									<div class=" mb-1">Reason: {condition.reason}</div>
 								{/if}
 								{#if condition.message}
-									<div class=" mb-1">{condition.message}</div>
+								<div class=" mb-1">
+									<ConditionMessage message={condition.message} />
+								</div>
 								{/if}
 								{#if condition.lastTransitionTime}
 									<div class="flex items-center gap-1 ">
@@ -549,8 +518,8 @@ function handleViewUsage(usage: K8sResource) {
 		<!-- Right Column: YAML Manifest -->
 		{#if showManifest}
 			<div class="flex-1 border-l pl-4 flex flex-col min-w-0">
-				<div class="flex-1 bg-gray-900 dark:bg-gray-950 rounded-lg p-4 overflow-auto min-h-0">
-					<pre class="text-xs font-mono text-gray-100 whitespace-pre overflow-x-auto"><code>{resourceToYaml(resource)}</code></pre>
+				<div class="flex-1">
+					<ManifestViewer manifest={resourceToYaml(resource)} />
 				</div>
 			</div>
 		{/if}
