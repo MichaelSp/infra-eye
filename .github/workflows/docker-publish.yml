@@ -100,7 +100,7 @@ jobs:
           branch: main
           prefix: "docker-"
           patchList: fix, chore, docs
-          noVersionBumpBehavior: current
+          noVersionBumpBehavior: patch
           noNewCommitBehavior: current
           skipInvalidTags: true
 
