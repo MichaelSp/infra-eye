@@ -1,11 +1,11 @@
 <script lang="ts">
-import type { K8sResource } from "$lib/stores/k8s-resources"
+import type { K8sResource } from "$lib/stores/k8s-resources";
 import {
   CheckCircleSolid,
   ClockSolid,
   ExclamationCircleSolid,
   PauseSolid
-} from "flowbite-svelte-icons"
+} from "flowbite-svelte-icons";
 
 interface Props {
   resources: K8sResource[]
@@ -24,7 +24,7 @@ interface StatusCounts {
 }
 
 // Only show these specific resource types
-const displayedKinds = ["Kustomization", "HelmRelease", "HelmChart"]
+const displayedKinds = ["Kustomization", "HelmRelease", "HelmChart", "GitRepository", "HelmRepository"]
 
 function getResourceStatus(resource: K8sResource): string {
   const conditions = resource.status?.conditions || []
@@ -78,31 +78,36 @@ function getStatusCounts(resources: K8sResource[]): Map<string, StatusCounts> {
 }
 
 const statusCounts = $derived(getStatusCounts(resources))
-const totalFailingResources = $derived(
-  Array.from(statusCounts.values()).reduce(
-    (sum, counts) => sum + counts.notReady,
-    0
-  )
+const visibleKinds = $derived(
+  displayedKinds.filter((kind) => statusCounts.has(kind))
 )
 
 function handleKindClick(kind: string) {
   onFilterChange?.(kind, "All statuses")
 }
 
-function handleStatusClick(status: string) {
+function handleStatusClick(kind: string, status: string) {
   if (
     status === "Ready" ||
     status === "NotReady" ||
     status === "Progressing" ||
     status === "Suspended"
   ) {
-    onFilterChange?.("all", status)
+    onFilterChange?.(kind, status)
   }
+}
+
+function getCardBackdropClass(counts: StatusCounts): string {
+  if (counts.notReady > 0) {
+    return "bg-red-50 border-red-200 hover:bg-red-100"
+  }
+
+  return "bg-green-50 border-green-200 hover:bg-green-100"
 }
 </script>
 
 <div class="flex gap-4 overflow-x-auto pb-2">
-  {#each displayedKinds as kind}
+  {#each visibleKinds as kind}
     {@const counts = statusCounts.get(kind) || {
       ready: 0,
       notReady: 0,
@@ -110,7 +115,7 @@ function handleStatusClick(status: string) {
       suspended: 0,
     }}
     <div
-      class="bg-white border  rounded-lg p-4 shadow-sm shrink-0 min-w-max hover: hover:shadow transition-all cursor-pointer"
+      class={`border rounded-lg p-4 shadow-sm shrink-0 min-w-max hover:shadow transition-all cursor-pointer ${getCardBackdropClass(counts)}`}
       onclick={() => handleKindClick(kind)}
       role="button"
       tabindex="0"
@@ -126,16 +131,14 @@ function handleStatusClick(status: string) {
           class="flex items-center gap-1.5 text-green-600 hover:text-green-700 cursor-pointer"
           onclick={(e) => {
             e.stopPropagation();
-            handleKindClick(kind);
-            handleStatusClick("Ready");
+            handleStatusClick(kind, "Ready");
           }}
           role="button"
           tabindex="0"
           onkeydown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.stopPropagation();
-              handleKindClick(kind);
-              handleStatusClick("Ready");
+              handleStatusClick(kind, "Ready");
             }
           }}
         >
@@ -146,16 +149,14 @@ function handleStatusClick(status: string) {
           class="flex items-center gap-1.5 text-red-400 hover:text-red-500 cursor-pointer"
           onclick={(e) => {
             e.stopPropagation();
-            handleKindClick(kind);
-            handleStatusClick("NotReady");
+            handleStatusClick(kind, "NotReady");
           }}
           role="button"
           tabindex="0"
           onkeydown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.stopPropagation();
-              handleKindClick(kind);
-              handleStatusClick("NotReady");
+              handleStatusClick(kind, "NotReady");
             }
           }}
         >
@@ -166,16 +167,14 @@ function handleStatusClick(status: string) {
           class="flex items-center gap-1.5  hover: cursor-pointer"
           onclick={(e) => {
             e.stopPropagation();
-            handleKindClick(kind);
-            handleStatusClick("Progressing");
+            handleStatusClick(kind, "Progressing");
           }}
           role="button"
           tabindex="0"
           onkeydown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.stopPropagation();
-              handleKindClick(kind);
-              handleStatusClick("Progressing");
+              handleStatusClick(kind, "Progressing");
             }
           }}
         >
@@ -186,16 +185,14 @@ function handleStatusClick(status: string) {
           class="flex items-center gap-1.5  hover: cursor-pointer"
           onclick={(e) => {
             e.stopPropagation();
-            handleKindClick(kind);
-            handleStatusClick("Suspended");
+            handleStatusClick(kind, "Suspended");
           }}
           role="button"
           tabindex="0"
           onkeydown={(e) => {
             if (e.key === "Enter" || e.key === " ") {
               e.stopPropagation();
-              handleKindClick(kind);
-              handleStatusClick("Suspended");
+              handleStatusClick(kind, "Suspended");
             }
           }}
         >
