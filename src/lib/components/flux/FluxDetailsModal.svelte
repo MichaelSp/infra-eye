@@ -1,6 +1,6 @@
 <script lang="ts">
-import type { K8sResource } from "$lib/stores/k8s-resources"
-import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte"
+import type { K8sResource } from "$lib/stores/k8s-resources";
+import { Badge, Button, ButtonGroup, Modal } from "flowbite-svelte";
 import {
   ArrowsRepeatOutline,
   ChevronDownOutline,
@@ -11,10 +11,10 @@ import {
   CodeOutline,
   ExclamationCircleOutline,
   LinkOutline
-} from "flowbite-svelte-icons"
-import yaml from "js-yaml"
-import { createEventDispatcher } from "svelte"
-import { formatTime, getSourceInfo } from "./utils"
+} from "flowbite-svelte-icons";
+import yaml from "js-yaml";
+import { createEventDispatcher } from "svelte";
+import { formatTime, getSourceInfo } from "./utils";
 
 interface Props {
   resource: K8sResource
@@ -37,12 +37,16 @@ let showManifest = $state(true)
 let isReconciling = $state(false)
 let reconcileError = $state<string | null>(null)
 let reconcileSuccess = $state(false)
+let isUpdatingSuspend = $state(false)
+let suspendError = $state<string | null>(null)
+let suspendSuccess = $state<string | null>(null)
 
 const sourceInfo = $derived(getSourceInfo(resource))
 const readyCondition = $derived(
   resource.status?.conditions?.find((c: any) => c.type === "Ready")
 )
 const isReady = $derived(readyCondition?.status === "True")
+const isSuspended = $derived(resource.spec?.suspend === true)
 const statusText = $derived(readyCondition?.message || "Unknown")
 const conditions = $derived(resource.status?.conditions || [])
 
@@ -292,6 +296,61 @@ async function triggerReconcile(force = false) {
   }
 }
 
+async function toggleSuspend() {
+	isUpdatingSuspend = true
+	suspendError = null
+	suspendSuccess = null
+
+	try {
+		const { group, version } = parseApiVersion(resource.apiVersion)
+		const targetSuspended = !isSuspended
+
+		const payload = {
+			namespace: resource.metadata.namespace,
+			name: resource.metadata.name,
+			kind: resource.kind,
+			group,
+			version,
+			suspended: targetSuspended
+		}
+
+		const response = await fetch("/api/suspend", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(payload)
+		})
+
+		const data = await response.json()
+		if (!response.ok) {
+			throw new Error(data.error || "Failed to update suspend state")
+		}
+
+		resource = {
+			...resource,
+			spec: {
+				...(resource.spec || {}),
+				suspend: targetSuspended
+			}
+		}
+
+		suspendSuccess = targetSuspended
+			? "Reconciliation suspended"
+			: "Reconciliation resumed"
+		setTimeout(() => {
+			suspendSuccess = null
+		}, 3000)
+	} catch (error: any) {
+		suspendError = error.message
+		setTimeout(() => {
+			suspendError = null
+		}, 5000)
+	} finally {
+		isUpdatingSuspend = false
+	}
+}
+
 function handleViewSource() {
   const sourceName = sourceInfo.repo || sourceInfo.source
   if (!sourceName) return
@@ -338,15 +397,21 @@ function handleViewUsage(usage: K8sResource) {
 					{#if reconcileSuccess}
 						<span class="text-xs text-green-600">✓ Reconcile triggered successfully</span>
 					{/if}
+					{#if suspendSuccess}
+						<span class="text-xs text-green-600">✓ {suspendSuccess}</span>
+					{/if}
 					{#if reconcileError}
 						<span class="text-xs text-red-600">Error: {reconcileError}</span>
+					{/if}
+					{#if suspendError}
+						<span class="text-xs text-red-600">Error: {suspendError}</span>
 					{/if}
 				</div>
 				<div class="flex items-center justify-between">
 					<ButtonGroup>
 						<Button
 							color="blue"
-							disabled={isReconciling}
+							disabled={isReconciling || isUpdatingSuspend || isSuspended}
 							onclick={() => triggerReconcile(false)}
 						>
 							<ArrowsRepeatOutline size="sm" class={isReconciling ? 'animate-spin' : ''} />
@@ -354,12 +419,26 @@ function handleViewUsage(usage: K8sResource) {
 						</Button>
 						<Button
 							color="purple"
-							disabled={isReconciling}
+							disabled={isReconciling || isUpdatingSuspend || isSuspended}
 							onclick={() => triggerReconcile(true)}
 							class="whitespace-nowrap"
 						>
 							<ArrowsRepeatOutline size="sm" class={isReconciling ? 'animate-spin' : ''} />
 							{isReconciling ? 'Reconciling...' : 'Force-Reconcile'}
+						</Button>
+						<Button
+							color={isSuspended ? "green" : "yellow"}
+							disabled={isReconciling || isUpdatingSuspend}
+							onclick={toggleSuspend}
+							class="whitespace-nowrap"
+						>
+							{#if isUpdatingSuspend}
+								Updating...
+							{:else if isSuspended}
+								Resume
+							{:else}
+								Suspend
+							{/if}
 						</Button>
 					</ButtonGroup>
 					<Button

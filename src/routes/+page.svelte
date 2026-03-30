@@ -1,20 +1,20 @@
 <script lang="ts">
-import DropdownFilters from "$lib/components/DropdownFilters.svelte"
-import EmptyState from "$lib/components/EmptyState.svelte"
-import LoadingSpinner from "$lib/components/LoadingSpinner.svelte"
-import ResourceTable from "$lib/components/ResourceTable.svelte"
-import SummaryCards from "$lib/components/SummaryCards.svelte"
+import DropdownFilters from "$lib/components/DropdownFilters.svelte";
+import EmptyState from "$lib/components/EmptyState.svelte";
+import LoadingSpinner from "$lib/components/LoadingSpinner.svelte";
+import ResourceTable from "$lib/components/ResourceTable.svelte";
+import SummaryCards from "$lib/components/SummaryCards.svelte";
 import {
   clearFilters as clearFilterState,
   filterState
-} from "$lib/state/filters.svelte"
-import type { ResourceStore } from "$lib/stores/k8s-resources"
+} from "$lib/state/filters.svelte";
+import type { ResourceStore } from "$lib/stores/k8s-resources";
 import {
   createK8sResourceStore,
   type K8sResource
-} from "$lib/stores/k8s-resources"
-import { Button, TabItem, Tabs } from "flowbite-svelte"
-import { derived, type Readable } from "svelte/store"
+} from "$lib/stores/k8s-resources";
+import { Button, TabItem, Tabs } from "flowbite-svelte";
+import { derived, type Readable } from "svelte/store";
 
 let { data } = $props()
 
@@ -166,13 +166,12 @@ let activeTab = $state("resources")
 
 					<!-- Resource Table -->
 					{#if filtered.length === 0}
-						<div class="text-center py-12 ">
+						<div class="text-center py-6 ">
 							<p class="text-lg mb-2">No resources found</p>
 							<p class="text-sm">Try adjusting your filters or search query</p>
 						</div>
-					{:else}
-						<ResourceTable resources={filtered}  allResources={$allResources}/>
 					{/if}
+					<ResourceTable resources={filtered} allResources={$allResources} />
 				</TabItem>
 				
 				<TabItem open={activeTab === "topology"} title="Topology Graph" onclick={() => activeTab = "topology"}>

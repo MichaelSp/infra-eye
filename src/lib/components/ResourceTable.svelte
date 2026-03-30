@@ -1,7 +1,7 @@
 <script lang="ts">
-import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte"
-import type { K8sResource } from "$lib/stores/k8s-resources"
-import { Badge } from "flowbite-svelte"
+import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte";
+import type { K8sResource } from "$lib/stores/k8s-resources";
+import { Badge } from "flowbite-svelte";
 
 interface Props {
   resources: K8sResource[]
@@ -18,8 +18,9 @@ $effect(() => {
   if (showModal && selectedResource) {
     const currentSelection = selectedResource
 
-    // Find the updated version of the selected resource
-    const updated = resources.find(
+    // Find the updated version of the selected resource from all resources,
+    // so filtering does not break modal updates.
+    const updated = allResources.find(
       (r) =>
         r.kind === currentSelection.kind &&
         r.metadata.namespace === currentSelection.metadata.namespace &&
