@@ -24,7 +24,8 @@ const resourceStores: Readable<ResourceStore>[] = [
   createK8sResourceStore("kustomizations.kustomize.toolkit.fluxcd.io"),
   createK8sResourceStore("helmcharts.source.toolkit.fluxcd.io"),
   createK8sResourceStore("helmrepositories.source.toolkit.fluxcd.io"),
-  createK8sResourceStore("gitrepositories.source.toolkit.fluxcd.io")
+  createK8sResourceStore("gitrepositories.source.toolkit.fluxcd.io"),
+  createK8sResourceStore("ocirepositories.source.toolkit.fluxcd.io")
 ]
 
 // Combine all resources into a single store
