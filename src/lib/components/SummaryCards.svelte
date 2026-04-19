@@ -1,11 +1,11 @@
 <script lang="ts">
-import type { K8sResource } from "$lib/stores/k8s-resources";
+import type { K8sResource } from "$lib/stores/k8s-resources"
 import {
   CheckCircleSolid,
   ClockSolid,
   ExclamationCircleSolid,
   PauseSolid
-} from "flowbite-svelte-icons";
+} from "flowbite-svelte-icons"
 
 interface Props {
   resources: K8sResource[]
@@ -24,7 +24,14 @@ interface StatusCounts {
 }
 
 // Only show these specific resource types
-const displayedKinds = ["Kustomization", "HelmRelease", "HelmChart", "GitRepository", "HelmRepository", "OCIRepository"]
+const displayedKinds = [
+  "Kustomization",
+  "HelmRelease",
+  "HelmChart",
+  "GitRepository",
+  "HelmRepository",
+  "OCIRepository"
+]
 
 function getResourceStatus(resource: K8sResource): string {
   const conditions = resource.status?.conditions || []

@@ -1,7 +1,7 @@
 <script lang="ts">
-import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte";
-import type { K8sResource } from "$lib/stores/k8s-resources";
-import { Badge } from "flowbite-svelte";
+import FluxDetailsModal from "$lib/components/flux/FluxDetailsModal.svelte"
+import type { K8sResource } from "$lib/stores/k8s-resources"
+import { Badge } from "flowbite-svelte"
 
 interface Props {
   resources: K8sResource[]

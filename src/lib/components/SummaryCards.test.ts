@@ -63,8 +63,12 @@ describe("SummaryCards", () => {
       }
     })
 
-    const readyCard = screen.getByText("Kustomizations").closest('[role="button"]')
-    const failingCard = screen.getByText("HelmReleases").closest('[role="button"]')
+    const readyCard = screen
+      .getByText("Kustomizations")
+      .closest('[role="button"]')
+    const failingCard = screen
+      .getByText("HelmReleases")
+      .closest('[role="button"]')
 
     expect(readyCard).toHaveClass("bg-green-50", "border-green-200")
     expect(failingCard).toHaveClass("bg-red-50", "border-red-200")
@@ -98,9 +102,9 @@ describe("SummaryCards", () => {
       }
     })
 
-    const readyStatusButtons = Array.from(container.querySelectorAll('[role="button"]')).filter(
-      (element) => element.className.includes("text-green-600")
-    )
+    const readyStatusButtons = Array.from(
+      container.querySelectorAll('[role="button"]')
+    ).filter((element) => element.className.includes("text-green-600"))
 
     await fireEvent.click(readyStatusButtons[0])
 
