@@ -138,8 +138,8 @@ let activeTab = $state("resources")
 		</div>
 
 		<!-- Tabs -->
-		<div class="mb-6 bg-white rounded-lg">
-			<Tabs style="underline" class="bg-white">
+		<div class="mb-6 bg-white dark:bg-gray-900 rounded-lg">
+			<Tabs style="underline" class="bg-white dark:bg-gray-900">
 				<TabItem open={activeTab === "resources"} title="Resource List" onclick={() => activeTab = "resources"}>
 					<!-- Filters -->
 					<div class="mt-6 mb-6">

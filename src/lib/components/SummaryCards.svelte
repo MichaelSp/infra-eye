@@ -24,7 +24,7 @@ interface StatusCounts {
 }
 
 // Only show these specific resource types
-const displayedKinds = ["Kustomization", "HelmRelease", "HelmChart", "GitRepository", "HelmRepository"]
+const displayedKinds = ["Kustomization", "HelmRelease", "HelmChart", "GitRepository", "HelmRepository", "OCIRepository"]
 
 function getResourceStatus(resource: K8sResource): string {
   const conditions = resource.status?.conditions || []
@@ -99,10 +99,10 @@ function handleStatusClick(kind: string, status: string) {
 
 function getCardBackdropClass(counts: StatusCounts): string {
   if (counts.notReady > 0) {
-    return "bg-red-50 border-red-200 hover:bg-red-100"
+    return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30"
   }
 
-  return "bg-green-50 border-green-200 hover:bg-green-100"
+  return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30"
 }
 </script>
 

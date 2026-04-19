@@ -4,6 +4,14 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Infra Eye</title>
+		<script>
+			if (window.matchMedia('(prefers-color-scheme: dark)').matches) {
+				document.documentElement.classList.add('dark');
+			}
+			window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', (e) => {
+				e.matches ? document.documentElement.classList.add('dark') : document.documentElement.classList.remove('dark');
+			});
+		</script>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

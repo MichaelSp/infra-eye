@@ -11,16 +11,16 @@ async function handleLogin() {
 	<title>Login - Infra Eye</title>
 </svelte:head>
 
-<div class="min-h-screen flex items-center justify-center  p-4">
-	<Card class="w-full max-w-md ">
+<div class="min-h-screen flex items-center justify-center p-4">
+	<Card class="w-full max-w-md">
 		<div class="text-center space-y-6">
 			<div>
-				<h1 class="text-3xl font-bold text-white mb-2">Infra Eye</h1>
-				<p class="">GitOps Dashboard</p>
+				<h1 class="text-3xl font-bold mb-2">Infra Eye</h1>
+				<p class="text-gray-600 dark:text-gray-400">GitOps Dashboard</p>
 			</div>
 
 			<div class="space-y-4">
-				<p class="">
+				<p class="text-gray-600 dark:text-gray-400">
 					Sign in with your OIDC provider to access the dashboard
 				</p>
 
@@ -29,7 +29,7 @@ async function handleLogin() {
 				</Button>
 			</div>
 
-			<div class="text-xs  pt-4">
+			<div class="text-xs text-gray-500 dark:text-gray-400 pt-4">
 				Secure authentication using OpenID Connect
 			</div>
 		</div>

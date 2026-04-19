@@ -48,14 +48,14 @@ function getResourceStatus(resource: K8sResource): {
   if (resource.spec?.suspend === true) {
     return {
       status: "Suspended",
-      customClass: " text-slate-700"
+      customClass: "text-slate-700 dark:text-slate-300"
     }
   }
 
   if (readyCondition?.status === "True") {
     return {
       status: "Ready",
-      customClass: "bg-black text-white"
+      customClass: "bg-black dark:bg-white text-white dark:text-black"
     }
   }
 
@@ -65,7 +65,7 @@ function getResourceStatus(resource: K8sResource): {
 
   return {
     status: "Progressing",
-    customClass: "bg-amber-50 text-amber-900"
+    customClass: "bg-amber-50 dark:bg-amber-900/30 text-amber-900 dark:text-amber-200"
   }
 }
 
@@ -103,10 +103,10 @@ function handleViewSource(
 }
 </script>
 
-<div class="bg-white border  rounded-lg overflow-hidden">
+<div class="bg-white dark:bg-gray-900 border dark:border-gray-700 rounded-lg overflow-hidden">
   <div class="overflow-x-auto">
     <table class="w-full text-sm text-left">
-      <thead class="text-xs  uppercase  border-b ">
+      <thead class="text-xs uppercase border-b dark:border-gray-700 dark:bg-gray-800">
         <tr>
           <th class="px-6 py-3 font-medium">Kind</th>
           <th class="px-6 py-3 font-medium">Namespace</th>
@@ -119,17 +119,17 @@ function handleViewSource(
         {#each resources as resource, i}
           {@const { status, color, customClass } = getResourceStatus(resource)}
           {@const message = getStatusMessage(resource)}
-          <tr 
-            class="border-b  hover: cursor-pointer transition-colors"
+          <tr
+            class="border-b dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer transition-colors"
             onclick={() => handleRowClick(resource)}
           >
-            <td class="px-6 py-3 font-medium ">
+            <td class="px-6 py-3 font-medium">
               {resource.kind}
             </td>
-            <td class="px-6 py-3 ">
+            <td class="px-6 py-3">
               {resource.metadata.namespace || "-"}
             </td>
-            <td class="px-6 py-3 ">
+            <td class="px-6 py-3">
               {resource.metadata.name}
             </td>
             <td class="px-6 py-3">
@@ -137,7 +137,7 @@ function handleViewSource(
                 {status}
               </Badge>
             </td>
-            <td class="px-6 py-3  max-w-md truncate">
+            <td class="px-6 py-3 max-w-md truncate">
               {message}
             </td>
           </tr>

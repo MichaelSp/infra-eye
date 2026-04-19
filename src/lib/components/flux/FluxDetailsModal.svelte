@@ -567,14 +567,14 @@ function handleViewUsage(usage: K8sResource) {
 
 			<!-- Status Message -->
 			{#if !isReady && statusText !== "Unknown"}
-				<div class="flex items-start gap-2 p-3  rounded">
+				<div class="flex items-start gap-2 p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded">
 					<ExclamationCircleOutline
 						size="sm"
 						class="text-yellow-400 mt-0.5 shrink-0"
 					/>
 					<div>
-						<div class="text-sm font-medium  mb-1">Status Message</div>
-						<div class="text-sm ">{statusText}</div>
+						<div class="text-sm font-medium mb-1">Status Message</div>
+						<div class="text-sm">{statusText}</div>
 					</div>
 				</div>
 			{/if}
@@ -596,7 +596,7 @@ function handleViewUsage(usage: K8sResource) {
 				{#if showConditions && conditions.length > 0}
 					<div class="space-y-2">
 						{#each conditions as condition}
-							<div class="text-xs p-3 rounded ">
+							<div class="text-xs p-3 rounded bg-gray-50 dark:bg-gray-800">
 								<div class="flex items-center justify-between mb-2">
 									<span class="font-medium ">{condition.type}</span>
 									<Badge
