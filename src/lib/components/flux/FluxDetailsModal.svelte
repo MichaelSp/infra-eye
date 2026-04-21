@@ -106,6 +106,20 @@ function findResourcesUsingSource(
   return resources.filter((res) => {
     // Check HelmRelease references
     if (res.kind === "HelmRelease") {
+      // chartRef: direct reference to OCIRepository or HelmChart
+      const chartRef = res.spec?.chartRef
+      if (chartRef) {
+        const refNamespace = chartRef.namespace || res.metadata.namespace
+        if (
+          chartRef.kind === sourceKind &&
+          chartRef.name === sourceName &&
+          refNamespace === sourceNamespace
+        ) {
+          return true
+        }
+      }
+
+      // chart.spec.sourceRef: traditional HelmRepository reference
       const ref = res.spec?.chart?.spec?.sourceRef
       if (!ref) return false
 
@@ -136,7 +150,12 @@ function findResourcesUsingSource(
 
 function getSourceKind(res: K8sResource): string | null {
   if (res.kind === "HelmRelease") {
-    return res.spec?.chart?.spec?.sourceRef?.kind || null
+    // chartRef is used for OCIRepository and HelmChart direct references
+    return (
+      res.spec?.chartRef?.kind ||
+      res.spec?.chart?.spec?.sourceRef?.kind ||
+      null
+    )
   } else if (res.kind === "Kustomization") {
     return res.spec?.sourceRef?.kind || null
   }
@@ -144,9 +163,11 @@ function getSourceKind(res: K8sResource): string | null {
 }
 
 function getSourceNamespace(res: K8sResource): string {
-  // Check if sourceRef specifies a namespace
+  // Check if sourceRef/chartRef specifies a namespace
   if (res.kind === "HelmRelease") {
-    const specifiedNs = res.spec?.chart?.spec?.sourceRef?.namespace
+    const specifiedNs =
+      res.spec?.chartRef?.namespace ||
+      res.spec?.chart?.spec?.sourceRef?.namespace
     if (specifiedNs) return specifiedNs
   } else if (res.kind === "Kustomization") {
     const specifiedNs = res.spec?.sourceRef?.namespace

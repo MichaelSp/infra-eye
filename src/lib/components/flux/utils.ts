@@ -15,6 +15,14 @@ export interface SourceInfo {
  */
 export function getSourceInfo(resource: K8sResource): SourceInfo {
   if (resource.kind === "HelmRelease") {
+    // chartRef points directly to an OCIRepository or HelmChart
+    if (resource.spec?.chartRef) {
+      return {
+        type: resource.spec.chartRef.kind || "Chart Ref",
+        value: resource.spec.chartRef.name || "-",
+        repo: resource.spec.chartRef.name
+      }
+    }
     return {
       type: "Helm Chart",
       value: resource.spec?.chart?.spec?.chart || "-",
@@ -42,7 +50,11 @@ export function getSourceInfo(resource: K8sResource): SourceInfo {
     return {
       type: "OCI Repository",
       value: resource.spec?.url || "-",
-      tag: resource.spec?.ref?.tag || "latest"
+      tag:
+        resource.spec?.ref?.tag ||
+        resource.spec?.ref?.semver ||
+        resource.spec?.ref?.digest ||
+        "latest"
     }
   }
   return { type: "Source", value: "-" }

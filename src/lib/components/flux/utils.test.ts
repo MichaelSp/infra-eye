@@ -136,7 +136,7 @@ describe("utils", () => {
 
     it("extracts OCIRepository source info", () => {
       const resource: K8sResource = {
-        apiVersion: "source.toolkit.fluxcd.io/v1beta2",
+        apiVersion: "source.toolkit.fluxcd.io/v1",
         kind: "OCIRepository",
         metadata: { name: "test", namespace: "default" },
         spec: {
@@ -153,9 +153,45 @@ describe("utils", () => {
       expect(result.tag).toBe("v1.0.0")
     })
 
+    it("extracts OCIRepository source info with semver ref", () => {
+      const resource: K8sResource = {
+        apiVersion: "source.toolkit.fluxcd.io/v1",
+        kind: "OCIRepository",
+        metadata: { name: "test", namespace: "default" },
+        spec: {
+          url: "oci://ghcr.io/user/repo",
+          ref: {
+            semver: ">=1.0.0"
+          }
+        }
+      }
+
+      const result = getSourceInfo(resource)
+      expect(result.type).toBe("OCI Repository")
+      expect(result.value).toBe("oci://ghcr.io/user/repo")
+      expect(result.tag).toBe(">=1.0.0")
+    })
+
+    it("extracts OCIRepository source info with digest ref", () => {
+      const resource: K8sResource = {
+        apiVersion: "source.toolkit.fluxcd.io/v1",
+        kind: "OCIRepository",
+        metadata: { name: "test", namespace: "default" },
+        spec: {
+          url: "oci://ghcr.io/user/repo",
+          ref: {
+            digest: "sha256:abc123"
+          }
+        }
+      }
+
+      const result = getSourceInfo(resource)
+      expect(result.tag).toBe("sha256:abc123")
+    })
+
     it("handles OCIRepository with default tag", () => {
       const resource: K8sResource = {
-        apiVersion: "source.toolkit.fluxcd.io/v1beta2",
+        apiVersion: "source.toolkit.fluxcd.io/v1",
         kind: "OCIRepository",
         metadata: { name: "test", namespace: "default" },
         spec: {
@@ -165,6 +201,25 @@ describe("utils", () => {
 
       const result = getSourceInfo(resource)
       expect(result.tag).toBe("latest")
+    })
+
+    it("extracts HelmRelease with chartRef (OCIRepository)", () => {
+      const resource: K8sResource = {
+        apiVersion: "helm.toolkit.fluxcd.io/v2",
+        kind: "HelmRelease",
+        metadata: { name: "test", namespace: "default" },
+        spec: {
+          chartRef: {
+            kind: "OCIRepository",
+            name: "my-oci-repo"
+          }
+        }
+      }
+
+      const result = getSourceInfo(resource)
+      expect(result.type).toBe("OCIRepository")
+      expect(result.value).toBe("my-oci-repo")
+      expect(result.repo).toBe("my-oci-repo")
     })
 
     it("returns default for unknown resource kind", () => {
