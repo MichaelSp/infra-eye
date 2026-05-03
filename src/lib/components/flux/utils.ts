@@ -39,6 +39,23 @@ export function getSourceInfo(resource: K8sResource): SourceInfo {
       source: resource.spec?.sourceRef?.name
     }
   }
+  if (resource.kind === "HelmChart") {
+    // HelmChart resources reference a HelmRepository via spec.sourceRef
+    // or via nested chart spec depending on Flux version. Try common fields.
+    const repoName =
+      resource.spec?.sourceRef?.name ||
+      resource.spec?.chart?.spec?.sourceRef?.name ||
+      resource.spec?.chartRef?.name ||
+      undefined
+
+    return {
+      type: "Helm Chart",
+      value: resource.spec?.chart?.spec?.chart || resource.metadata.name || "-",
+      version:
+        resource.spec?.chart?.spec?.version || resource.spec?.version || "latest",
+      repo: repoName
+    }
+  }
   if (resource.kind === "GitRepository") {
     return {
       type: "Git Repository",
