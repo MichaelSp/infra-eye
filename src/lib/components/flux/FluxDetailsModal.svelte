@@ -152,9 +152,7 @@ function getSourceKind(res: K8sResource): string | null {
   if (res.kind === "HelmRelease") {
     // chartRef is used for OCIRepository and HelmChart direct references
     return (
-      res.spec?.chartRef?.kind ||
-      res.spec?.chart?.spec?.sourceRef?.kind ||
-      null
+      res.spec?.chartRef?.kind || res.spec?.chart?.spec?.sourceRef?.kind || null
     )
   } else if (res.kind === "Kustomization") {
     return res.spec?.sourceRef?.kind || null

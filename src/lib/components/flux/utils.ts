@@ -52,7 +52,9 @@ export function getSourceInfo(resource: K8sResource): SourceInfo {
       type: "Helm Chart",
       value: resource.spec?.chart?.spec?.chart || resource.metadata.name || "-",
       version:
-        resource.spec?.chart?.spec?.version || resource.spec?.version || "latest",
+        resource.spec?.chart?.spec?.version ||
+        resource.spec?.version ||
+        "latest",
       repo: repoName
     }
   }
