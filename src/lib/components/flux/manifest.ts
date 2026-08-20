@@ -1,4 +1,4 @@
-import yaml from "js-yaml"
+import * as yaml from "js-yaml"
 
 export function filterResourceManifest(input: unknown): unknown {
   if (!input || typeof input !== "object") return input
