@@ -61,9 +61,9 @@ const statusOptions = $derived(statuses.map((s) => ({ value: s, name: s })))
           })
         }}
       >
-        <svelte:fragment slot="left">
+        {#snippet left()}
           <SearchOutline class="w-4 h-4" />
-        </svelte:fragment>
+        {/snippet}
       </Input>
     </div>
 
