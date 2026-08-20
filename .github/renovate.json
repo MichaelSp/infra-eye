@@ -4,7 +4,9 @@
   "customManagers": [
     {
       "customType": "regex",
-      "fileMatch": ["^chart/.+/Chart\\.yaml$"],
+      "managerFilePatterns": [
+        "/^chart/.+/Chart\\.yaml$/"
+      ],
       "matchStrings": ["appVersion:\\s*\"?(?<currentValue>[^\"\\s]+)\"?"],
       "datasourceTemplate": "github-releases",
       "depNameTemplate": "MichaelSp/infra-eye",

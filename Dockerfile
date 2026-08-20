@@ -1,4 +1,4 @@
-FROM node:24-alpine AS stage
+FROM node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43 AS stage
 
 WORKDIR /app
 
@@ -13,7 +13,7 @@ RUN npm run prepare
 COPY . .
 RUN npm run build
 
-FROM node:24-alpine
+FROM node:24-alpine@sha256:d32cdf619f63fe0471182d08996dd516c6275bb5fd31ae06e55a570bd9e1ad43
 WORKDIR /app
 
 # Copy pre-installed node_modules from build stage instead of reinstalling
