@@ -33,6 +33,7 @@ const oidcProvider: Provider = {
   issuer: process.env.OAUTH_ISSUER_URL,
   clientId: process.env.OAUTH_CLIENT_ID,
   clientSecret: process.env.OAUTH_CLIENT_SECRET,
+  checks: ["pkce", "state"],
   authorization: { params: { scope: "openid profile email" } },
   profile(profile) {
     return {
