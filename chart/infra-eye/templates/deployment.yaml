@@ -53,6 +53,10 @@ spec:
                   key: {{ .Values.config.oauth.clientSecretKey }}
             - name: OAUTH_ISSUER_URL
               value: "{{ .Values.config.oauth.issuerUrl }}"
+            {{- if .Values.config.oauth.caCertSecret }}
+            - name: OAUTH_CA_CERT_FILE
+              value: /var/run/secrets/infra-eye/oidc-ca.crt
+            {{- end }}
           ports:
             - name: http
               containerPort: {{ .Values.service.port }}
@@ -69,13 +73,30 @@ spec:
           resources:
             {{- toYaml . | nindent 12 }}
           {{- end }}
-          {{- with .Values.volumeMounts }}
+          {{- if or .Values.volumeMounts .Values.config.oauth.caCertSecret }}
           volumeMounts:
+            {{- with .Values.volumeMounts }}
             {{- toYaml . | nindent 12 }}
+            {{- end }}
+            {{- if .Values.config.oauth.caCertSecret }}
+            - name: oidc-ca
+              mountPath: /var/run/secrets/infra-eye
+              readOnly: true
+            {{- end }}
           {{- end }}
-      {{- with .Values.volumes }}
+      {{- if or .Values.volumes .Values.config.oauth.caCertSecret }}
       volumes:
+        {{- with .Values.volumes }}
         {{- toYaml . | nindent 8 }}
+        {{- end }}
+        {{- if .Values.config.oauth.caCertSecret }}
+        - name: oidc-ca
+          secret:
+            secretName: {{ .Values.config.oauth.caCertSecret }}
+            items:
+              - key: {{ .Values.config.oauth.caCertKey }}
+                path: oidc-ca.crt
+        {{- end }}
       {{- end }}
       {{- with .Values.nodeSelector }}
       nodeSelector:
