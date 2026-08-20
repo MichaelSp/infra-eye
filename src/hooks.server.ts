@@ -1,9 +1,29 @@
 import type { Provider } from "@auth/core/providers"
 import { SvelteKitAuth } from "@auth/sveltekit"
 import type { Handle } from "@sveltejs/kit"
+import { readFileSync } from "node:fs"
+import tls from "node:tls"
 
 // Check if OIDC is configured
 const isOidcConfigured = Boolean(process.env.OAUTH_ISSUER_URL)
+
+function configureOidcCaTrust(): void {
+  const inlineCa = process.env.OAUTH_CA_CERT_PEM?.trim()
+  const caFile = process.env.OAUTH_CA_CERT_FILE?.trim()
+
+  if (!inlineCa && !caFile) return
+
+  const extraCa = inlineCa || readFileSync(caFile as string, "utf8").trim()
+  if (!extraCa) return
+
+  tls.setDefaultCACertificates([...tls.getCACertificates("default"), extraCa])
+
+  console.log("[Auth] Loaded additional OIDC CA certificate")
+}
+
+if (isOidcConfigured) {
+  configureOidcCaTrust()
+}
 
 // Custom OIDC provider configuration using environment variables
 const oidcProvider: Provider = {

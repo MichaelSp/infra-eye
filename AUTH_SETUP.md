@@ -11,6 +11,7 @@ Create a `.env` file in the `infra-eye` directory with the following variables:
 OAUTH_CLIENT_ID=your-client-id
 OAUTH_CLIENT_SECRET=your-client-secret
 OAUTH_ISSUER_URL=https://your-oidc-provider.com
+OAUTH_CA_CERT_FILE=/path/to/private-ca.pem
 
 # Auth Secret (generate with: openssl rand -base64 32)
 AUTH_SECRET=your-random-secret-here
@@ -50,6 +51,18 @@ AUTH_SECRET=your-random-secret-here
    - You'll be redirected to the login page
    - Click "Sign in with OIDC" to authenticate
 
+## Private CA / Self-Signed Issuers
+
+If your OIDC provider uses a private CA or a self-signed certificate, provide the CA
+certificate to the app instead of disabling TLS verification:
+
+```bash
+OAUTH_CA_CERT_FILE=/path/to/private-ca.pem
+```
+
+You can also pass the PEM contents directly with `OAUTH_CA_CERT_PEM` if mounting a
+file is inconvenient.
+
 ## Supported OIDC Providers
 
 This setup works with any standard OIDC provider:
@@ -70,7 +83,7 @@ For production:
    ```bash
    OAUTH_CLIENT_ID=production-client-id
    OAUTH_CLIENT_SECRET=production-secret
-   OAUTH_ISSUER_URL=https://auth.yourdomain.com/.well-known/openid-configuration
+   OAUTH_ISSUER_URL=https://auth.yourdomain.com
    AUTH_SECRET=production-random-secret
    ```
 
@@ -84,10 +97,11 @@ For production:
 - Check that `OAUTH_ISSUER_URL` is accessible
 - Verify client credentials are correct
 - Ensure the redirect URI is registered in your OIDC provider
+- If your issuer uses a private CA, set `OAUTH_CA_CERT_FILE` or `OAUTH_CA_CERT_PEM`
 
 ### "Invalid credentials" error
 - Double-check `OAUTH_CLIENT_ID` and `OAUTH_CLIENT_SECRET`
-- Verify the discovery URL returns valid JSON
+- Verify the issuer metadata is reachable from the server
 
 ### Session not persisting
 - Make sure `AUTH_SECRET` is set and is the same across restarts
