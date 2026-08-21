@@ -31,8 +31,8 @@
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/svelte": "5.4.2",
     "@testing-library/user-event": "14.6.5",
-    "@vitest/coverage-v8": "4.1.10",
-    "@vitest/ui": "4.1.10",
+    "@vitest/coverage-v8": "4.1.11",
+    "@vitest/ui": "4.1.11",
     "autoprefixer": "10.5.4",
     "flowbite": "4.0.2",
     "flowbite-svelte": "1.33.1",
@@ -45,7 +45,7 @@
     "tailwindcss": "4.3.3",
     "typescript": "6.0.3",
     "vite": "7.3.6",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   },
   "dependencies": {
     "@auth/core": "^0.41.1",
