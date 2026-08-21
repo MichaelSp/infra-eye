@@ -109,6 +109,14 @@ function getCardBackdropClass(counts: StatusCounts): string {
     return "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 hover:bg-red-100 dark:hover:bg-red-900/30"
   }
 
+  if (counts.progressing > 0) {
+    return "bg-amber-50 dark:bg-amber-900/20 border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/30"
+  }
+
+  if (counts.suspended > 0) {
+    return "bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800/60"
+  }
+
   return "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800 hover:bg-green-100 dark:hover:bg-green-900/30"
 }
 </script>
@@ -171,7 +179,7 @@ function getCardBackdropClass(counts: StatusCounts): string {
           <span class="font-semibold">{counts.notReady}</span>
         </div>
         <div
-          class="flex items-center gap-1.5  hover: cursor-pointer"
+          class="flex items-center gap-1.5 text-amber-600 hover:text-amber-700 cursor-pointer"
           onclick={(e) => {
             e.stopPropagation();
             handleStatusClick(kind, "Progressing");
@@ -189,7 +197,7 @@ function getCardBackdropClass(counts: StatusCounts): string {
           <span class="font-semibold">{counts.progressing}</span>
         </div>
         <div
-          class="flex items-center gap-1.5  hover: cursor-pointer"
+          class="flex items-center gap-1.5 text-slate-500 hover:text-slate-600 cursor-pointer"
           onclick={(e) => {
             e.stopPropagation();
             handleStatusClick(kind, "Suspended");

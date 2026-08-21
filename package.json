@@ -22,7 +22,7 @@
     "test:coverage": "vitest run --coverage"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.8",
+    "@biomejs/biome": "2.5.9",
     "@sveltejs/kit": "2.70.2",
     "@sveltejs/vite-plugin-svelte": "6.2.4",
     "@tailwindcss/postcss": "4.3.3",
@@ -30,7 +30,7 @@
     "@tailwindcss/vite": "4.3.3",
     "@testing-library/jest-dom": "7.0.1",
     "@testing-library/svelte": "5.4.2",
-    "@testing-library/user-event": "14.6.4",
+    "@testing-library/user-event": "14.6.5",
     "@vitest/coverage-v8": "4.1.10",
     "@vitest/ui": "4.1.10",
     "autoprefixer": "10.5.4",
@@ -50,7 +50,7 @@
   "dependencies": {
     "@auth/core": "^0.41.1",
     "@auth/sveltekit": "^1.11.1",
-    "@kubernetes/client-node": "^1.4.0",
+    "@kubernetes/client-node": "^2.0.0",
     "@sveltejs/adapter-node": "^5.4.0"
   }
 }

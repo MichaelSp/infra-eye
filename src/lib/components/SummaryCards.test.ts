@@ -74,6 +74,49 @@ describe("SummaryCards", () => {
     expect(failingCard).toHaveClass("bg-red-50", "border-red-200")
   })
 
+  it("uses distinct tints for progressing and suspended kinds", () => {
+    render(SummaryCards, {
+      props: {
+        resources: [
+          {
+            apiVersion: "source.toolkit.fluxcd.io/v1",
+            kind: "GitRepository",
+            metadata: {
+              name: "infra",
+              namespace: "flux-system"
+            },
+            status: {
+              conditions: []
+            }
+          },
+          {
+            apiVersion: "source.toolkit.fluxcd.io/v1",
+            kind: "HelmRepository",
+            metadata: {
+              name: "charts",
+              namespace: "flux-system"
+            },
+            spec: {
+              suspend: true
+            }
+          }
+        ],
+        kindFilter: "all",
+        statusFilter: "All statuses"
+      }
+    })
+
+    const progressingCard = screen
+      .getByText("GitRepositorys")
+      .closest('[role="button"]')
+    const suspendedCard = screen
+      .getByText("HelmRepositorys")
+      .closest('[role="button"]')
+
+    expect(progressingCard).toHaveClass("bg-amber-50", "border-amber-200")
+    expect(suspendedCard).toHaveClass("bg-slate-50", "border-slate-200")
+  })
+
   it("sets the kind filter when clicking a card", async () => {
     const onFilterChange = vi.fn()
 

@@ -361,7 +361,7 @@ function handleViewUsage(usage: K8sResource) {
 </script>
 
 <Modal bind:open size="xl" class="">
-	<svelte:fragment slot="header">
+	{#snippet header()}
 		<div class="flex items-center gap-2">
 			<CodeOutline size="sm" />
 			<span>{resource.metadata.name}</span>
@@ -369,7 +369,7 @@ function handleViewUsage(usage: K8sResource) {
 				{isReady ? "Ready" : "Not Ready"}
 			</Badge>
 		</div>
-	</svelte:fragment>
+	{/snippet}
 
 	<div class="flex gap-4 min-h-[600px]">
 		<!-- Left Column: Metadata and Details -->
