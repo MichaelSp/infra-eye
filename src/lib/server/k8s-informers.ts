@@ -14,6 +14,26 @@ export type ResourceEvent = {
 
 export type EventCallback = (event: ResourceEvent) => void
 
+export function isWatchTimeout(error: unknown): boolean {
+  if (!error || typeof error !== "object") return false
+
+  const watchError = error as {
+    code?: string
+    errno?: number
+    message?: string
+    name?: string
+  }
+
+  return (
+    watchError.name === "TimeoutError" ||
+    watchError.code === "ETIMEDOUT" ||
+    watchError.errno === -60 ||
+    watchError.message?.includes("ETIMEDOUT") === true ||
+    watchError.message?.includes("operation was aborted due to timeout") ===
+      true
+  )
+}
+
 interface ApiResource {
   name: string
   singularName: string
@@ -367,38 +387,32 @@ class K8sInformerManager {
           queryOptions.allowWatchBookmarks = true
         }
 
-        await watch.watch(
+        await this.waitForWatchCompletion(
+          watch,
           path,
           queryOptions,
-          (type, apiObj) => this.handleWatchEvent(watchKey, type, apiObj),
-          (err) => this.handleWatchError(watchKey, err)
+          watchKey,
+          signal
         )
 
         retryCount = 0
         if (!signal.aborted) {
-          await new Promise((resolve) => setTimeout(resolve, 1000))
+          await this.waitForDelay(1000, signal)
         }
       } catch (err) {
         if (signal.aborted) break
 
-        retryCount++
-
-        // Check for ETIMEDOUT errors - wait 30 seconds before retry
-        const isTimeoutError =
-          err instanceof Error &&
-          (err.message.includes("ETIMEDOUT") ||
-            (err as any).code === "ETIMEDOUT" ||
-            (err as any).errno === -60)
-
-        let delay: number
-        if (isTimeoutError) {
+        if (isWatchTimeout(err)) {
           console.warn(
-            `[K8s] Watch timeout for ${watchKey}, waiting 30 seconds before retry to avoid resource waste`
+            `[K8s] Watch timeout for ${watchKey}, reconnecting from the last resource version`
           )
-          delay = 30000 // 30 seconds for ETIMEDOUT
-        } else {
-          delay = Math.min(1000 * 2 ** retryCount, 30000)
+          retryCount = 0
+          await this.waitForDelay(1000, signal)
+          continue
         }
+
+        retryCount++
+        this.handleWatchError(watchKey, err)
 
         if (retryCount >= maxRetries) {
           console.error(`[K8s] Max retries reached for ${watchKey}`)
@@ -406,9 +420,80 @@ class K8sInformerManager {
           break
         }
 
-        await new Promise((resolve) => setTimeout(resolve, delay))
+        await this.waitForDelay(Math.min(1000 * 2 ** retryCount, 30000), signal)
       }
     }
+  }
+
+  private waitForWatchCompletion(
+    watch: Watch,
+    path: string,
+    queryOptions: Record<string, string | number | boolean | undefined>,
+    watchKey: string,
+    signal: AbortSignal
+  ): Promise<void> {
+    return new Promise((resolve, reject) => {
+      let requestAbortController: AbortController | null = null
+      let aborted = signal.aborted
+      let settled = false
+
+      const finish = (error?: unknown) => {
+        if (settled) return
+        settled = true
+        signal.removeEventListener("abort", onAbort)
+
+        if (signal.aborted) {
+          resolve()
+        } else if (error) {
+          reject(error)
+        } else {
+          resolve()
+        }
+      }
+
+      const onAbort = () => {
+        aborted = true
+        requestAbortController?.abort()
+        finish()
+      }
+
+      if (aborted) {
+        finish()
+        return
+      }
+
+      signal.addEventListener("abort", onAbort, { once: true })
+      watch
+        .watch(
+          path,
+          queryOptions,
+          (type, apiObj) => this.handleWatchEvent(watchKey, type, apiObj),
+          (error) => finish(error)
+        )
+        .then((controller) => {
+          requestAbortController = controller
+          if (aborted) requestAbortController.abort()
+        })
+        .catch((error) => finish(error))
+    })
+  }
+
+  private waitForDelay(delay: number, signal: AbortSignal): Promise<void> {
+    return new Promise((resolve) => {
+      const timer = setTimeout(finish, delay)
+
+      function finish() {
+        clearTimeout(timer)
+        signal.removeEventListener("abort", finish)
+        resolve()
+      }
+
+      if (signal.aborted) {
+        finish()
+      } else {
+        signal.addEventListener("abort", finish, { once: true })
+      }
+    })
   }
 
   private handleWatchEvent(watchKey: string, type: string, apiObj: any): void {
@@ -445,22 +530,7 @@ class K8sInformerManager {
   }
 
   private handleWatchError(watchKey: string, err: any): void {
-    // Check for ETIMEDOUT errors
-    const isTimeoutError =
-      err &&
-      (err.message?.includes("ETIMEDOUT") ||
-        err.code === "ETIMEDOUT" ||
-        err.errno === -60)
-
-    if (isTimeoutError) {
-      console.warn(
-        `[K8s] Watch timeout error for ${watchKey}: ${err.message || err}`
-      )
-      this.notifyError(
-        watchKey,
-        `Connection timeout (will retry): ${err.message || "ETIMEDOUT"}`
-      )
-    } else if (err && (err as any).statusCode !== 404) {
+    if (err && !isWatchTimeout(err) && (err as any).statusCode !== 404) {
       console.error(`[K8s] Watch error for ${watchKey}:`, err)
       this.notifyError(watchKey, err?.message || "Unknown watch error")
     }

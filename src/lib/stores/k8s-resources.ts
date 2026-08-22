@@ -125,7 +125,7 @@ export function createK8sResourceStore(
       })
     })
 
-    eventSource.addEventListener("error", (event) => {
+    eventSource.addEventListener("watch-error", (event) => {
       try {
         const data = JSON.parse((event as MessageEvent).data)
         update((state) => ({

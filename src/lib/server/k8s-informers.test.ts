@@ -6,23 +6,38 @@ vi.mock("@kubernetes/client-node", () => {
     watch: vi.fn()
   }))
 
+  class MockKubeConfig {
+    applyToHTTPSOptions = vi.fn()
+    getCurrentCluster = vi.fn(() => ({
+      server: "https://kubernetes.default.svc",
+      skipTLSVerify: false
+    }))
+    getCurrentContext = vi.fn(() => "test-context")
+    loadFromCluster = vi.fn()
+    loadFromDefault = vi.fn()
+    loadFromFile = vi.fn()
+    makeApiClient = vi.fn(() => ({
+      getAPIVersions: vi.fn().mockResolvedValue({ groups: [] })
+    }))
+  }
+
   return {
     Watch: mockWatch,
-    KubeConfig: vi.fn().mockImplementation(() => ({
-      loadFromDefault: vi.fn(),
-      loadFromFile: vi.fn(),
-      loadFromCluster: vi.fn(),
-      getCurrentCluster: vi.fn(() => ({
-        server: "https://kubernetes.default.svc",
-        skipTLSVerify: false
-      })),
-      getCurrentContext: vi.fn(() => "test-context"),
-      applyToHTTPSOptions: vi.fn(),
-      makeApiClient: vi.fn()
-    })),
+    KubeConfig: MockKubeConfig,
     ApisApi: vi.fn()
   }
 })
+
+import { getInformerManager, isWatchTimeout } from "./k8s-informers"
+
+type WatchStub = {
+  watch: (
+    path: string,
+    queryOptions: Record<string, string | number | boolean | undefined>,
+    onEvent: (type: string, apiObject: unknown) => void,
+    onDone: (error?: unknown) => void
+  ) => Promise<{ abort: () => void }>
+}
 
 describe("K8sInformerManager ETIMEDOUT handling", () => {
   let consoleWarnSpy: any
@@ -78,18 +93,10 @@ describe("K8sInformerManager ETIMEDOUT handling", () => {
   })
 
   describe("Retry delay calculation", () => {
-    it("should use 30 second delay for ETIMEDOUT errors", () => {
-      const error = new Error("read ETIMEDOUT")
-      const isTimeoutError = error.message.includes("ETIMEDOUT")
+    it("should reconnect promptly after a watch timeout", () => {
+      const delay = 1000
 
-      let delay: number
-      if (isTimeoutError) {
-        delay = 30000 // 30 seconds for ETIMEDOUT
-      } else {
-        delay = 1000 // Default retry delay
-      }
-
-      expect(delay).toBe(30000)
+      expect(delay).toBe(1000)
     })
 
     it("should use exponential backoff for other errors", () => {
@@ -120,7 +127,7 @@ describe("K8sInformerManager ETIMEDOUT handling", () => {
       const isTimeoutError = error.code === "ETIMEDOUT" || error.errno === -60
       if (isTimeoutError) {
         console.warn(
-          `[K8s] Watch timeout for ${watchKey}, waiting 30 seconds before retry to avoid resource waste`
+          `[K8s] Watch timeout for ${watchKey}, reconnecting from the last resource version`
         )
       }
 
@@ -128,7 +135,7 @@ describe("K8sInformerManager ETIMEDOUT handling", () => {
         expect.stringContaining("[K8s] Watch timeout for helmrepositories")
       )
       expect(consoleWarnSpy).toHaveBeenCalledWith(
-        expect.stringContaining("30 seconds before retry")
+        expect.stringContaining("reconnecting from the last resource version")
       )
     })
 
@@ -195,5 +202,87 @@ describe("K8sInformerManager ETIMEDOUT handling", () => {
         expect(isTimeoutError).toBe(true)
       })
     })
+  })
+})
+
+describe("watch lifecycle", () => {
+  it("recognizes the Kubernetes client v2 timeout", () => {
+    expect(
+      isWatchTimeout({
+        name: "TimeoutError",
+        message: "The operation was aborted due to timeout"
+      })
+    ).toBe(true)
+  })
+
+  it("waits for the v2 done callback before continuing", async () => {
+    let done: (error?: unknown) => void = () => {}
+    const requestAbortController = { abort: vi.fn() }
+    const watch: WatchStub = {
+      watch: vi.fn(async (_path, _queryOptions, _onEvent, onDone) => {
+        done = onDone
+        return requestAbortController
+      })
+    }
+    const manager = getInformerManager() as unknown as {
+      waitForWatchCompletion: (
+        watch: WatchStub,
+        path: string,
+        queryOptions: Record<string, string | number | boolean | undefined>,
+        watchKey: string,
+        signal: AbortSignal
+      ) => Promise<void>
+    }
+    const stop = new AbortController()
+    let completed = false
+
+    const pending = manager
+      .waitForWatchCompletion(
+        watch,
+        "/apis/example",
+        {},
+        "example",
+        stop.signal
+      )
+      .then(() => {
+        completed = true
+      })
+
+    await vi.waitFor(() => expect(watch.watch).toHaveBeenCalledOnce())
+    expect(completed).toBe(false)
+
+    done()
+    await pending
+    expect(completed).toBe(true)
+  })
+
+  it("aborts the active v2 watch when stopped", async () => {
+    const requestAbortController = { abort: vi.fn() }
+    const watch: WatchStub = {
+      watch: vi.fn(async () => requestAbortController)
+    }
+    const manager = getInformerManager() as unknown as {
+      waitForWatchCompletion: (
+        watch: WatchStub,
+        path: string,
+        queryOptions: Record<string, string | number | boolean | undefined>,
+        watchKey: string,
+        signal: AbortSignal
+      ) => Promise<void>
+    }
+    const stop = new AbortController()
+
+    const pending = manager.waitForWatchCompletion(
+      watch,
+      "/apis/example",
+      {},
+      "example",
+      stop.signal
+    )
+    await vi.waitFor(() => expect(watch.watch).toHaveBeenCalledOnce())
+
+    stop.abort()
+    await pending
+    expect(requestAbortController.abort).toHaveBeenCalledOnce()
   })
 })
