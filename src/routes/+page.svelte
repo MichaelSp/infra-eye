@@ -120,7 +120,7 @@ let activeTab = $state("resources")
 </svelte:head>
 
 <main class="px-8 py-6 max-w-7xl mx-auto">
-	{#if $connectionStatus.status === "connecting"}
+	{#if $allResources.length === 0 && $connectionStatus.status === "connecting"}
 		<LoadingSpinner message="Connecting to Kubernetes cluster..." />
 	{:else if $allResources.length === 0}
 		<EmptyState kindFilter={filterState.kind} />

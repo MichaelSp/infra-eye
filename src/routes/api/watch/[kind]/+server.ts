@@ -15,6 +15,8 @@ export const GET: RequestHandler = async ({ params, url }) => {
   )
 
   // Create a readable stream for SSE
+  let cleanupStream = () => {}
+
   const stream = new ReadableStream({
     start(controller) {
       const encoder = new TextEncoder()
@@ -108,7 +110,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
                   error: event.error,
                   timestamp: new Date().toISOString()
                 },
-                "error"
+                "watch-error"
               )
             } else if (event.type === "MODIFIED") {
               // Debounce MODIFIED events only
@@ -211,8 +213,9 @@ export const GET: RequestHandler = async ({ params, url }) => {
         }
       }, 30000)
 
-      // Cleanup on stream close or cancel
-      return () => {
+      cleanupStream = () => {
+        if (isClosed) return
+
         // Mark as closed first to prevent any further operations
         isClosed = true
 
@@ -231,6 +234,9 @@ export const GET: RequestHandler = async ({ params, url }) => {
           unsubscribe = null
         }
       }
+    },
+    cancel() {
+      cleanupStream()
     }
   })
 
