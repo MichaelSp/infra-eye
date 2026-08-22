@@ -71,6 +71,7 @@ jobs:
       contents: write
       packages: write
       id-token: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -166,22 +167,33 @@ jobs:
             --notes-file release_notes.md \
             --latest
 
-      - name: Bump Helm Chart version
+      - name: Update Helm Chart version
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        env:
-          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           VERSION="${{ steps.semver.outputs.next }}"
           PLAIN_VERSION="${VERSION#docker-v}"
 
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-
-          # Update Chart.yaml with docker version
           yq eval -i ".appVersion = \"$PLAIN_VERSION\"" ${{ env.CHART_PATH }}/Chart.yaml
           yq eval -i ".version = \"$PLAIN_VERSION\"" ${{ env.CHART_PATH }}/Chart.yaml
 
-          # Commit and push directly to main
-          git add ${{ env.CHART_PATH }}/Chart.yaml
-          git commit -m "chore(release): bump Helm chart version to $VERSION [skip ci]" || echo "No changes to commit"
-          git push origin main
+      - name: Create Helm Chart version bump PR
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        id: chart_bump_pr
+        uses: peter-evans/create-pull-request@5f6978faf089d4d20b00c7766989d076bb2fc7f1 # v8
+        with:
+          token: ${{ secrets.GH_PAT }}
+          branch: chore/release-chart-${{ steps.semver.outputs.next }}
+          base: main
+          title: "chore(release): bump Helm chart version to ${{ steps.semver.outputs.next }}"
+          body: "Automated Helm chart version bump after Docker image release ${{ steps.semver.outputs.next }}."
+          commit-message: "chore(release): bump Helm chart version to ${{ steps.semver.outputs.next }} [skip ci]"
+          add-paths: |
+            ${{ env.CHART_PATH }}/Chart.yaml
+          labels: "release, automated-pr"
+          delete-branch: true
+
+      - name: Enable auto-merge for Helm Chart version bump PR
+        if: steps.chart_bump_pr.outputs.pull-request-number != ''
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: gh pr merge --squash --auto ${{ steps.chart_bump_pr.outputs.pull-request-number }}
