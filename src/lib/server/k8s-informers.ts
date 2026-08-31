@@ -284,7 +284,10 @@ class K8sInformerManager {
     const watcher = this.watchers.get(watchKey)
     if (!watcher) throw new Error(`Failed to create watcher for ${watchKey}`)
 
-    // Send cached resources to new subscriber
+    watcher.callbacks.add(callback)
+
+    // Send cached resources to new subscriber. Register first so no watch
+    // events are lost while the cache is replayed.
     watcher.resourceCache.forEach((resource) => {
       try {
         callback({ type: "ADDED", resource })
@@ -292,8 +295,6 @@ class K8sInformerManager {
         console.error(`[K8s] Error sending cached resource:`, err)
       }
     })
-
-    watcher.callbacks.add(callback)
 
     // Return unsubscribe function
     return () => {
@@ -356,7 +357,19 @@ class K8sInformerManager {
       if (data.items && Array.isArray(data.items)) {
         data.items.forEach((item: KubernetesObject) => {
           const uid = item.metadata?.uid
-          if (uid) watcher.resourceCache.set(uid, item)
+          if (!uid) return
+
+          watcher.resourceCache.set(uid, item)
+          watcher.callbacks.forEach((callback) => {
+            try {
+              callback({ type: "ADDED", resource: item })
+            } catch (err) {
+              console.error(
+                `[K8s] Error in callback for initial list ${watchKey}:`,
+                err
+              )
+            }
+          })
         })
         console.log(
           `[K8s] Cached ${data.items.length} resources for ${watchKey}`
