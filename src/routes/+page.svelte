@@ -20,12 +20,16 @@ let { data } = $props()
 
 // Configure which resources to watch
 const resourceStores: Readable<ResourceStore>[] = [
-  createK8sResourceStore("helmreleases.helm.toolkit.fluxcd.io"),
-  createK8sResourceStore("kustomizations.kustomize.toolkit.fluxcd.io"),
-  createK8sResourceStore("helmcharts.source.toolkit.fluxcd.io"),
-  createK8sResourceStore("helmrepositories.source.toolkit.fluxcd.io"),
-  createK8sResourceStore("gitrepositories.source.toolkit.fluxcd.io"),
-  createK8sResourceStore("ocirepositories.source.toolkit.fluxcd.io")
+  createK8sResourceStore(
+    [
+      "helmreleases.helm.toolkit.fluxcd.io",
+      "kustomizations.kustomize.toolkit.fluxcd.io",
+      "helmcharts.source.toolkit.fluxcd.io",
+      "helmrepositories.source.toolkit.fluxcd.io",
+      "gitrepositories.source.toolkit.fluxcd.io",
+      "ocirepositories.source.toolkit.fluxcd.io"
+    ].join(",")
+  )
 ]
 
 // Combine all resources into a single store

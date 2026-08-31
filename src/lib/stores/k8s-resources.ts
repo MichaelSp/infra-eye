@@ -59,9 +59,10 @@ export function createK8sResourceStore(
   const baseRetryDelay = 1000
 
   function getResourceKey(resource: K8sResource): string {
-    return resource.metadata.namespace
+    const name = resource.metadata.namespace
       ? `${resource.metadata.namespace}/${resource.metadata.name}`
       : resource.metadata.name
+    return `${resource.apiVersion}/${resource.kind}:${name}`
   }
 
   function connect() {
@@ -81,6 +82,18 @@ export function createK8sResourceStore(
     }))
 
     eventSource = new EventSource(url)
+
+    // `open` is the reliable transport-level signal. The server's custom
+    // `connected` event can be emitted before this listener is registered on
+    // fast local connections, leaving the UI stuck in "connecting".
+    eventSource.onopen = () => {
+      retryCount = 0
+      update((state) => ({
+        ...state,
+        status: "connected",
+        error: null
+      }))
+    }
 
     eventSource.addEventListener("connected", (event) => {
       try {

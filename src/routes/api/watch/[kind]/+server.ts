@@ -6,6 +6,7 @@ import type { RequestHandler } from "./$types"
 
 export const GET: RequestHandler = async ({ params, url }) => {
   const { kind } = params
+  const kinds = kind.split(",").filter(Boolean)
   const namespace = url.searchParams.get("namespace") || undefined
 
   console.log(
@@ -21,7 +22,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
     start(controller) {
       const encoder = new TextEncoder()
       let isClosed = false
-      let unsubscribe: (() => void) | null = null
+      const unsubscribes: (() => void)[] = []
 
       // Helper function to send SSE message
       const sendEvent = (data: any, event?: string) => {
@@ -43,10 +44,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
           ) {
             isClosed = true
             // Ensure cleanup happens
-            if (unsubscribe) {
-              unsubscribe()
-              unsubscribe = null
-            }
+            unsubscribes.splice(0).forEach((unsubscribe) => unsubscribe())
           } else {
             console.error("[SSE] Error sending event to client:", err)
           }
@@ -57,7 +55,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
       sendEvent(
         {
           type: "CONNECTED",
-          message: `Watching ${kind}${
+          message: `Watching ${kinds.join(", ")}${
             namespace ? ` in namespace ${namespace}` : ""
           }`,
           timestamp: new Date().toISOString()
@@ -89,14 +87,15 @@ export const GET: RequestHandler = async ({ params, url }) => {
         const debounceBuffer = new Map<string, any>()
         const DEBOUNCE_MS = 500
 
-        function getResourceKey(resource: any): string {
+        function getResourceKey(kind: string, resource: any): string {
           const ns = resource?.metadata?.namespace || "_cluster"
           const name = resource?.metadata?.name || "_unknown"
-          return `${ns}/${name}`
+          return `${kind}:${ns}/${name}`
         }
 
-        unsubscribe = informerManager.subscribe(
-          kind,
+        kinds.forEach((watchKind) => {
+          const unsubscribe = informerManager.subscribe(
+          watchKind,
           (event: ResourceEvent) => {
             // Double-check controller state before processing event
             if (isClosed) {
@@ -114,7 +113,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
               )
             } else if (event.type === "MODIFIED") {
               // Debounce MODIFIED events only
-              const key = getResourceKey(event.resource)
+              const key = getResourceKey(watchKind, event.resource)
 
               // Clear any pending timer for this resource
               const existingTimer = debounceTimers.get(key)
@@ -158,7 +157,9 @@ export const GET: RequestHandler = async ({ params, url }) => {
             }
           },
           namespace
-        )
+          )
+          unsubscribes.push(unsubscribe)
+        })
 
         // Store debounce timers in closure for cleanup
         const cleanup = () => {
@@ -229,10 +230,7 @@ export const GET: RequestHandler = async ({ params, url }) => {
         clearInterval(keepAliveInterval)
 
         // Unsubscribe from K8s events
-        if (unsubscribe) {
-          unsubscribe()
-          unsubscribe = null
-        }
+        unsubscribes.splice(0).forEach((unsubscribe) => unsubscribe())
       }
     },
     cancel() {

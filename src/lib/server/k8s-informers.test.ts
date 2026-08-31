@@ -206,6 +206,45 @@ describe("K8sInformerManager ETIMEDOUT handling", () => {
 })
 
 describe("watch lifecycle", () => {
+  it("emits resources from the initial list to active subscribers", async () => {
+    const manager = getInformerManager() as unknown as {
+      watchers: Map<
+        string,
+        {
+          callbacks: Set<(event: unknown) => void>
+          path: string
+          resourceCache: Map<string, unknown>
+          resourceVersion?: string
+          watch: WatchStub
+        }
+      >
+      makeRequest: (path: string) => Promise<unknown>
+      fetchInitialList: (watchKey: string, path: string) => Promise<void>
+    }
+    const callback = vi.fn()
+    const resource = {
+      apiVersion: "example.io/v1",
+      kind: "Example",
+      metadata: { uid: "example-uid", name: "example" }
+    }
+
+    manager.watchers.set("example", {
+      callbacks: new Set([callback]),
+      path: "/apis/example.io/v1/examples",
+      resourceCache: new Map(),
+      watch: { watch: vi.fn() }
+    })
+    manager.makeRequest = vi.fn().mockResolvedValue({
+      metadata: { resourceVersion: "123" },
+      items: [resource]
+    })
+
+    await manager.fetchInitialList("example", "/apis/example.io/v1/examples")
+
+    expect(callback).toHaveBeenCalledWith({ type: "ADDED", resource })
+    expect(manager.watchers.get("example")?.resourceCache.get("example-uid")).toEqual(resource)
+  })
+
   it("recognizes the Kubernetes client v2 timeout", () => {
     expect(
       isWatchTimeout({
