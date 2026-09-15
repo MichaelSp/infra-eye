@@ -33,7 +33,7 @@
     "@testing-library/user-event": "14.6.7",
     "@vitest/coverage-v8": "5.0.0",
     "@vitest/ui": "5.0.0",
-    "autoprefixer": "10.5.6",
+    "autoprefixer": "10.6.0",
     "flowbite": "4.0.2",
     "flowbite-svelte": "1.33.1",
     "flowbite-svelte-icons": "3.1.0",
