@@ -72,6 +72,7 @@ jobs:
       packages: write
       id-token: write
       pull-requests: write
+      actions: write
 
     steps:
       - name: Checkout repository
@@ -210,4 +211,20 @@ jobs:
         if: steps.chart_bump_pr.outputs.pull-request-number != ''
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr merge --squash --auto ${{ steps.chart_bump_pr.outputs.pull-request-number }}
+        run: |
+          PR_NUMBER="${{ steps.chart_bump_pr.outputs.pull-request-number }}"
+          gh pr merge --squash --auto "$PR_NUMBER"
+
+          for attempt in $(seq 1 60); do
+            MERGED_AT="$(gh pr view "$PR_NUMBER" --json mergedAt --jq '.mergedAt // empty')"
+            if [ -n "$MERGED_AT" ]; then
+              VERSION="${{ steps.semver.outputs.next }}"
+              PLAIN_VERSION="${VERSION#docker-v}"
+              gh workflow run chart-1-publish.yml --ref main -f version="$PLAIN_VERSION"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge"
+          exit 1

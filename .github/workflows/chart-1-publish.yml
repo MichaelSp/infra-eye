@@ -1,10 +1,12 @@
 name: Helm Chart - 1 Publish
 
 on:
-  push:
-    tags:
-      - "chart-v*.*.*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: Chart version to publish (without the chart-v prefix)
+        required: true
+        type: string
 permissions: {}
 
 env:
@@ -34,6 +36,28 @@ jobs:
         run: |
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Verify and create chart tag
+        env:
+          CHART_VERSION: ${{ inputs.version }}
+        run: |
+          VERSION="$(yq eval '.version' "${{ env.CHART_PATH }}/Chart.yaml")"
+          if [ "$VERSION" != "$CHART_VERSION" ]; then
+            echo "::error::Chart.yaml version $VERSION does not match requested version $CHART_VERSION"
+            exit 1
+          fi
+
+          TAG="chart-v${CHART_VERSION}"
+          if git show-ref --tags --verify --quiet "refs/tags/${TAG}"; then
+            TAG_SHA="$(git rev-parse "${TAG}^{commit}")"
+            if [ "$TAG_SHA" != "$GITHUB_SHA" ]; then
+              echo "::error::${TAG} already points to ${TAG_SHA}, expected ${GITHUB_SHA}"
+              exit 1
+            fi
+          else
+            git tag "$TAG" "$GITHUB_SHA"
+            git push origin "refs/tags/${TAG}"
+          fi
 
       - name: Run chart-releaser
         uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0

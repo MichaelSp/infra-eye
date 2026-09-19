@@ -21,6 +21,7 @@ on:
 permissions:
   contents: write
   pull-requests: write
+  actions: write
 
 env:
   CHART_PATH: chart/infra-eye
@@ -99,6 +100,10 @@ jobs:
           if [[ "${{ github.event_name }}" == 'pull_request' ]]; then
             echo "bumpVersion=false" >> $GITHUB_OUTPUT
             echo "createTag=false" >> $GITHUB_OUTPUT
+          elif [[ "${{ steps.changes.outputs.any_changed }}" != "true" ]]; then
+            echo "No Chart.yaml change. Skipping chart release actions."
+            echo "bumpVersion=false" >> $GITHUB_OUTPUT
+            echo "createTag=false" >> $GITHUB_OUTPUT
           elif [[ "${{ steps.changes.outputs.only_changed }}" == "true" ]]; then
             echo "Only Chart.yaml changed. Will create tag but not bump version."
             echo "bumpVersion=false" >> $GITHUB_OUTPUT
@@ -161,7 +166,22 @@ jobs:
         if: steps.changes.outputs.skip != 'true' && steps.semver.outputs.next != steps.semver.outputs.current
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh pr merge --squash --auto ${{ steps.create_pr.outputs.pull-request-number }}
+        run: |
+          PR_NUMBER="${{ steps.create_pr.outputs.pull-request-number }}"
+          gh pr merge --squash --auto "$PR_NUMBER"
+
+          for attempt in $(seq 1 60); do
+            MERGED_AT="$(gh pr view "$PR_NUMBER" --json mergedAt --jq '.mergedAt // empty')"
+            if [ -n "$MERGED_AT" ]; then
+              VERSION="${{ steps.semver.outputs.next }}"
+              gh workflow run chart-1-publish.yml --ref main -f version="$VERSION"
+              exit 0
+            fi
+            sleep 10
+          done
+
+          echo "::error::Timed out waiting for PR #$PR_NUMBER to merge"
+          exit 1
 
   create-tag:
     runs-on: ubuntu-latest
@@ -180,9 +200,9 @@ jobs:
           VERSION=$(yq eval '.version' ${{ env.CHART_PATH }}/Chart.yaml)
           echo "version=$VERSION" >> $GITHUB_OUTPUT
 
-      - name: Create Tag
+      - name: Dispatch chart publish
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           VERSION="${{ steps.chart-version.outputs.version }}"
-
-          git tag "chart-v$VERSION"
-          git push origin "chart-v$VERSION"
+          gh workflow run chart-1-publish.yml --ref main -f version="$VERSION"
