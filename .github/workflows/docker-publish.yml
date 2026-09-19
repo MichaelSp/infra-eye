@@ -200,7 +200,7 @@ jobs:
           base: main
           title: "chore(release): bump Helm chart version to ${{ steps.semver.outputs.next }}"
           body: "Automated Helm chart version bump after Docker image release ${{ steps.semver.outputs.next }}."
-          commit-message: "chore(release): bump Helm chart version to ${{ steps.semver.outputs.next }} [skip ci]"
+          commit-message: "chore(release): bump Helm chart version to ${{ steps.semver.outputs.next }}"
           add-paths: |
             ${{ env.CHART_PATH }}/Chart.yaml
           labels: "release, automated-pr"
