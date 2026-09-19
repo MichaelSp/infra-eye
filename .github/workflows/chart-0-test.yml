@@ -128,6 +128,8 @@ jobs:
           prefix: "chart-"
           patchList: fix, chore, docs
           noVersionBumpBehavior: current
+          # Docker tags are newer than chart tags; inspect enough tags to find chart-v*.
+          maxTagsToFetch: 100
           skipInvalidTags: true
 
       - name: Update Chart.yaml version
