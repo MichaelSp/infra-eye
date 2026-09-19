@@ -2,6 +2,16 @@ apiVersion: v1
 entries:
   infra-eye:
   - apiVersion: v2
+    appVersion: 1.8.36
+    created: "2026-09-19T12:50:05.697953682Z"
+    description: A Helm chart for Kubernetes
+    digest: 465198ea63fcdd256626b81c944fe31675d5f6993d4f62ddb5f281419376999b
+    name: infra-eye
+    type: application
+    urls:
+    - https://github.com/MichaelSp/infra-eye/releases/download/infra-eye-0.7.0/infra-eye-0.7.0.tgz
+    version: 0.7.0
+  - apiVersion: v2
     appVersion: 0.6.0
     created: "2026-03-29T16:39:28.985698015Z"
     description: A Helm chart for Kubernetes
@@ -71,4 +81,4 @@ entries:
     urls:
     - https://MichaelSp.github.io/infra-eye/infra-eye-0.1.0.tgz
     version: 0.1.0
-generated: "2026-03-29T16:39:28.985732619Z"
+generated: "2026-09-19T12:50:05.697994773Z"
