@@ -1,0 +1,109 @@
+name: Release - Publish Weekly
+
+on:
+  schedule:
+    - cron: "0 8 * * 1" # Mondays, 08:00 UTC
+  workflow_dispatch:
+permissions: {}
+
+env:
+  REGISTRY: ghcr.io
+  CHART_PATH: chart/infra-eye
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    concurrency:
+      group: release-main
+      cancel-in-progress: false
+    permissions:
+      contents: write
+      packages: write
+
+    steps:
+      - name: Find pending Docker release
+        id: draft
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
+        with:
+          script: |
+            const releases = await github.paginate(github.rest.repos.listReleases, {
+              ...context.repo, per_page: 100
+            });
+            const drafts = releases.filter(r => r.draft && /^docker-v\d+\.\d+\.\d+$/.test(r.tag_name));
+            if (drafts.length > 1) {
+              throw new Error('Multiple Docker drafts found; resolve duplicates before publishing.');
+            }
+            const draft = drafts[0];
+            if (!draft) {
+              core.info('No draft release; nothing to publish.');
+              return;
+            }
+            if (!/^[0-9a-f]{40}$/.test(draft.target_commitish)) {
+              throw new Error('Draft must target an exact built commit SHA.');
+            }
+            core.setOutput('tag', draft.tag_name);
+            core.setOutput('sha', draft.target_commitish);
+            core.setOutput('version', draft.tag_name.replace(/^docker-v/, ''));
+
+      - name: Checkout release commit
+        if: steps.draft.outputs.tag != ''
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ steps.draft.outputs.sha }}
+          fetch-depth: 0
+
+      - name: Set up Helm
+        if: steps.draft.outputs.tag != ''
+        uses: azure/setup-helm@9bc31f4ebc9c6b171d7bfbaa5d006ae7abdb4310 # v5
+        with:
+          version: "latest"
+
+      - name: Package matching Helm chart
+        if: steps.draft.outputs.tag != ''
+        env:
+          RELEASE_VERSION: ${{ steps.draft.outputs.version }}
+          RELEASE_TAG: ${{ steps.draft.outputs.tag }}
+        run: |
+          yq eval -i '.version = strenv(RELEASE_VERSION) | .appVersion = strenv(RELEASE_TAG)' "$CHART_PATH/Chart.yaml"
+          helm lint "$CHART_PATH"
+          mkdir -p .cr-release-packages
+          helm package "$CHART_PATH" --destination .cr-release-packages
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Publish Helm chart and Pages index
+        if: steps.draft.outputs.tag != ''
+        uses: helm/chart-releaser-action@cae68fefc6b5f367a0275617c9f83181ba54714f # v1.7.0
+        with:
+          skip_packaging: true
+          skip_existing: true
+          mark_as_latest: false
+        env:
+          CR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Log in to Container Registry
+        if: steps.draft.outputs.tag != ''
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push Helm chart to OCI registry
+        if: steps.draft.outputs.tag != ''
+        env:
+          RELEASE_VERSION: ${{ steps.draft.outputs.version }}
+        run: |
+          OWNER_LC="${GITHUB_REPOSITORY_OWNER,,}"
+          helm push ".cr-release-packages/infra-eye-${RELEASE_VERSION}.tgz" "oci://${REGISTRY}/${OWNER_LC}/infra-eye"
+
+      # Publish last: a failed chart publish leaves the draft available for retry.
+      - name: Publish draft release
+        if: steps.draft.outputs.tag != ''
+        uses: softprops/action-gh-release@8a0cd651e5b2365bd640854a3fa5dfc70e4875f3 # v3.0.4
+        with:
+          tag_name: ${{ steps.draft.outputs.tag }}
+          target_commitish: ${{ steps.draft.outputs.sha }}
+          draft: false
+          make_latest: true

@@ -1,8 +1,5 @@
 name: Helm Chart - 0 Test and Lint
 
-description: |
-  Lint and test Helm chart.
-
 on:
   pull_request:
     branches:
@@ -10,6 +7,7 @@ on:
     paths:
       - "chart/**"
       - ".github/workflows/chart-*.yml"
+      - ".github/workflows/release-publish.yml"
   workflow_dispatch:
 
 permissions:
