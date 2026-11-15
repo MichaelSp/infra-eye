@@ -1,0 +1,17 @@
+name-template: 'Docker Image docker-v$RESOLVED_VERSION'
+tag-template: 'docker-v$RESOLVED_VERSION'
+tag-prefix: docker-v
+filter-by-commitish: false
+change-template: '- $TITLE (#$NUMBER) @$AUTHOR'
+template: |
+  ## Changes
+
+  $CHANGES
+
+  ## Docker image
+
+  ```sh
+  docker pull ghcr.io/michaelsp/infra-eye:docker-v$RESOLVED_VERSION
+  ```
+
+  Supported platforms: linux/amd64, linux/arm64.
